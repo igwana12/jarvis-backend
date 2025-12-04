@@ -73,7 +73,10 @@ def get_system_metrics():
     """Get real system metrics"""
     cpu_percent = psutil.cpu_percent(interval=1)
     memory = psutil.virtual_memory()
-    disk = psutil.disk_usage(str(WORKSPACE_BASE))
+
+    # Use root filesystem for production, workspace for local
+    disk_path = "/" if not WORKSPACE_BASE.exists() else str(WORKSPACE_BASE)
+    disk = psutil.disk_usage(disk_path)
 
     # Calculate optimization level (inverse of resource usage)
     optimization_level = 100 - ((cpu_percent + memory.percent) / 2)
