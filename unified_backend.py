@@ -19,11 +19,54 @@ from datetime import datetime
 from typing import Dict, List, Any, Optional
 import threading
 import time
+from pydantic import BaseModel, Field, validator
 
 # Initialize Flask app
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "*"}})  # Allow all origins for now
+
+# CORS Configuration - restrict to production domains
+ALLOWED_ORIGINS = os.environ.get(
+    'ALLOWED_ORIGINS',
+    'https://cockpit.nikoskatsaounis.com,https://ai-command.nikoskatsaounis.com,https://v0-cockpit-source-kzi3n3jsx-nikos-projects-9639ae0e.vercel.app,https://ai-command-center-6a1nwu7pw-nikos-projects-9639ae0e.vercel.app'
+).split(',')
+
+CORS(app, resources={r"/*": {"origins": ALLOWED_ORIGINS}})
 sock = Sock(app)
+
+# ============================================================================
+# INPUT VALIDATION MODELS
+# ============================================================================
+
+class ContentGenerateRequest(BaseModel):
+    """Validation for content generation requests"""
+    prompt: str = Field(..., min_length=1, max_length=10000)
+    persona: str = Field(default="Technical Writer")
+
+    @validator('prompt')
+    def sanitize_prompt(cls, v):
+        # Remove potentially harmful characters
+        if not v.strip():
+            raise ValueError('Prompt cannot be empty')
+        return v.strip()
+
+    @validator('persona')
+    def validate_persona(cls, v):
+        allowed_personas = ["Technical Writer", "Creative Storyteller", "Academic Researcher",
+                           "Marketing Copywriter", "Journalist", "Poet"]
+        if v not in allowed_personas:
+            raise ValueError(f'Invalid persona. Must be one of: {allowed_personas}')
+        return v
+
+class VideoGenerateRequest(BaseModel):
+    """Validation for video generation requests"""
+    description: str = Field(..., min_length=1, max_length=1000)
+    style: str = Field(default="cinematic")
+
+    @validator('description')
+    def sanitize_description(cls, v):
+        if not v.strip():
+            raise ValueError('Description cannot be empty')
+        return v.strip()
 
 # Paths
 WORKSPACE_BASE = Path("/Volumes/AI_WORKSPACE")
@@ -580,12 +623,13 @@ def generate_content():
     """Generate AI content with selected persona"""
     global total_cost, cost_breakdown
 
-    data = request.json
-    prompt = data.get('prompt', '')
-    persona = data.get('persona', 'Technical Writer')
-
-    if not prompt:
-        return jsonify({"error": "Prompt required"}), 400
+    try:
+        # Validate input with Pydantic
+        validated_data = ContentGenerateRequest(**request.json)
+        prompt = validated_data.prompt
+        persona = validated_data.persona
+    except Exception as e:
+        return jsonify({"error": f"Invalid input: {str(e)}"}), 400
 
     try:
         # Check for OpenAI API key
