@@ -51,6 +51,10 @@ cost_breakdown = {
     "storage": 0.0
 }
 
+# Video generation history
+video_history = []
+MAX_VIDEO_HISTORY = 20
+
 
 def load_antigravity_config():
     """Load anti-gravity configuration"""
@@ -504,6 +508,62 @@ def track_cost():
         "category": category,
         "amount": amount,
         "total_cost": round(total_cost, 4)
+    })
+
+
+@app.route('/api/videos/recent', methods=['GET'])
+def recent_videos():
+    """Get recent video generation history"""
+    global video_history
+
+    return jsonify({
+        "videos": video_history[-10:],  # Last 10 videos
+        "count": len(video_history)
+    })
+
+
+@app.route('/api/videos/track', methods=['POST'])
+def track_video_generation():
+    """Track a video generation (placeholder for actual generation logic)"""
+    global video_history, total_cost, cost_breakdown
+
+    data = request.json
+    title = data.get('title', 'Untitled Video')
+    style = data.get('style', 'Cinematic')
+    duration = data.get('duration', 30)  # seconds
+
+    # Calculate costs based on duration
+    script_cost = 0.03
+    images_cost = round((duration / 30) * 0.04, 4)  # DALL-E per 30s
+    voice_cost = round((duration / 60) * 0.15, 4)  # ElevenLabs per minute
+    total_video_cost = round(script_cost + images_cost + voice_cost, 4)
+
+    # Track costs
+    cost_breakdown["ai_apis"] += total_video_cost
+    total_cost += total_video_cost
+
+    # Add to history
+    video_entry = {
+        "title": title,
+        "duration": f"{duration // 60}:{duration % 60:02d}",
+        "style": style,
+        "timestamp": datetime.now().isoformat(),
+        "cost": total_video_cost
+    }
+
+    video_history.append(video_entry)
+    if len(video_history) > MAX_VIDEO_HISTORY:
+        video_history = video_history[-MAX_VIDEO_HISTORY:]
+
+    return jsonify({
+        "status": "generated",
+        "video": video_entry,
+        "cost_breakdown": {
+            "script": script_cost,
+            "images": images_cost,
+            "voice": voice_cost,
+            "total": total_video_cost
+        }
     })
 
 
