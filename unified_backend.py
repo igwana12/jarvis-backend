@@ -39,6 +39,18 @@ ws_clients = set()
 # Anti-Gravity configuration
 ANTIGRAVITY_CONFIG = WORKSPACE_BASE / "ANTIGRAVITY_CONFIG.json"
 
+# Historical metrics storage (in-memory for now, can be moved to SQLite later)
+metrics_history = []
+MAX_HISTORY_POINTS = 50
+
+# Cost tracking
+total_cost = 0.0
+cost_breakdown = {
+    "infrastructure": 0.0,
+    "ai_apis": 0.0,
+    "storage": 0.0
+}
+
 
 def load_antigravity_config():
     """Load anti-gravity configuration"""
@@ -81,7 +93,7 @@ def get_system_metrics():
     # Calculate optimization level (inverse of resource usage)
     optimization_level = 100 - ((cpu_percent + memory.percent) / 2)
 
-    return {
+    metrics = {
         "cpu_load": cpu_percent,
         "memory_used_gb": round(memory.used / (1024**3), 1),
         "memory_percent": memory.percent,
@@ -90,6 +102,27 @@ def get_system_metrics():
         "optimization_level": round(optimization_level, 1),
         "active_processes": len(psutil.pids())
     }
+
+    # Store in history for charts
+    store_metrics_history(metrics)
+
+    return metrics
+
+
+def store_metrics_history(metrics):
+    """Store metrics in history for charting"""
+    global metrics_history
+
+    metrics_history.append({
+        "timestamp": datetime.now().isoformat(),
+        "cpu": metrics["cpu_load"],
+        "memory": metrics["memory_percent"],
+        "optimization": metrics["optimization_level"]
+    })
+
+    # Keep only last MAX_HISTORY_POINTS
+    if len(metrics_history) > MAX_HISTORY_POINTS:
+        metrics_history = metrics_history[-MAX_HISTORY_POINTS:]
 
 
 def get_running_services():
@@ -412,6 +445,65 @@ def create_comic():
         "status": "queued",
         "job_id": f"comic_{int(time.time())}",
         "message": "Comic creation queued"
+    })
+
+
+@app.route('/api/metrics/history', methods=['GET'])
+def metrics_history_endpoint():
+    """Get historical metrics for charting"""
+    return jsonify({
+        "history": metrics_history,
+        "count": len(metrics_history)
+    })
+
+
+@app.route('/api/workflows/active', methods=['GET'])
+def active_workflows():
+    """Get currently active/running workflows"""
+    # For now, return empty as we don't have active workflow tracking yet
+    # TODO: Implement actual workflow execution tracking
+    return jsonify({
+        "workflows": [],
+        "count": 0
+    })
+
+
+@app.route('/api/costs/current', methods=['GET'])
+def current_costs():
+    """Get current cost breakdown"""
+    global total_cost, cost_breakdown
+
+    # Calculate Railway hosting costs (simple estimate)
+    # Railway free tier or paid tier tracking would go here
+    cost_breakdown["infrastructure"] = 0.0  # Free tier for now
+
+    # Return current costs
+    return jsonify({
+        "total_cost": round(total_cost, 4),
+        "breakdown": cost_breakdown,
+        "currency": "USD",
+        "period": "current_month"
+    })
+
+
+@app.route('/api/costs/track', methods=['POST'])
+def track_cost():
+    """Track an API or service cost"""
+    global total_cost, cost_breakdown
+
+    data = request.json
+    category = data.get('category', 'ai_apis')  # ai_apis, storage, infrastructure
+    amount = float(data.get('amount', 0))
+
+    if category in cost_breakdown:
+        cost_breakdown[category] += amount
+        total_cost += amount
+
+    return jsonify({
+        "status": "tracked",
+        "category": category,
+        "amount": amount,
+        "total_cost": round(total_cost, 4)
     })
 
 
