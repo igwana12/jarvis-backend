@@ -1,1 +1,1 @@
-web: python3 unified_backend.py
+web: gunicorn --bind 0.0.0.0:$PORT --workers 4 --timeout 120 unified_backend:app
