@@ -9,3 +9,6 @@ export { UniversalToolPanel } from './tools/UniversalToolPanel';
 // Common components
 export { Header } from './common/Header';
 export { StatusBar } from './common/StatusBar';
+
+// Auth components
+export { AuthGate } from './auth/AuthGate';

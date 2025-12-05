@@ -8,6 +8,7 @@ import {
   PipelineStageNavigator,
   ToolPalette,
   UniversalToolPanel,
+  AuthGate,
 } from './components';
 import { StoryboardingTool, ComicGeneratorTool, PodcastStudioTool, PromptCrafterTool, TradingDashboardTool } from './components/tools/specialized';
 import { Dashboard, Workflows, Models, Settings } from './pages';
@@ -175,7 +176,9 @@ function MainApp() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <MainApp />
+      <AuthGate>
+        <MainApp />
+      </AuthGate>
     </QueryClientProvider>
   );
 }
