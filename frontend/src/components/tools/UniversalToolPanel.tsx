@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useWorkspaceStore } from '../../stores/workspaceStore';
 
@@ -10,12 +10,42 @@ interface ToolOutput {
 }
 
 export function UniversalToolPanel() {
-  const { selectedTool, selectTool, isToolPanelOpen } = useWorkspaceStore();
+  const {
+    selectedTool,
+    selectTool,
+    isToolPanelOpen,
+    availableModels,
+    globalModel,
+    currentStage,
+    getModelForStage
+  } = useWorkspaceStore();
   const [inputValue, setInputValue] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [logs, setLogs] = useState<string[]>([]);
   const [outputs, setOutputs] = useState<ToolOutput[]>([]);
+  const [selectedModelId, setSelectedModelId] = useState<string | null>(null);
+  const [showModelDropdown, setShowModelDropdown] = useState(false);
+  const modelDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Get the effective model for this tool (tool-specific > stage > global)
+  const stageModel = getModelForStage(currentStage);
+  const effectiveModelId = selectedModelId || stageModel?.id || globalModel;
+  const currentModel = availableModels.find(m => m.id === effectiveModelId);
+  const textModels = availableModels.filter(m => m.category === 'text' && m.isAvailable);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (modelDropdownRef.current && !modelDropdownRef.current.contains(event.target as Node)) {
+        setShowModelDropdown(false);
+      }
+    };
+    if (showModelDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showModelDropdown]);
 
   if (!selectedTool || !isToolPanelOpen) return null;
 
@@ -83,13 +113,81 @@ export function UniversalToolPanel() {
                 </p>
               </div>
             </div>
-            <button
-              onClick={handleClose}
-              className="p-2 text-text-secondary hover:text-text-primary hover:bg-bg-primary rounded-lg transition-colors"
-              aria-label="Close panel"
-            >
-              ✕
-            </button>
+
+            {/* Model selector and close button */}
+            <div className="flex items-center gap-3">
+              {/* Model selector */}
+              <div className="relative" ref={modelDropdownRef}>
+                <button
+                  onClick={() => setShowModelDropdown(!showModelDropdown)}
+                  className="flex items-center gap-2 px-3 py-2 bg-bg-primary border border-border rounded-lg text-sm hover:border-accent/50 transition-colors"
+                >
+                  <span>{currentModel?.icon || '🤖'}</span>
+                  <span className="text-text-primary">{currentModel?.name || 'Select Model'}</span>
+                  <span className="text-text-secondary text-xs">▼</span>
+                </button>
+
+                {/* Model dropdown */}
+                <AnimatePresence>
+                  {showModelDropdown && (
+                    <motion.div
+                      className="absolute right-0 top-full mt-2 min-w-[200px] bg-bg-secondary border border-border rounded-lg shadow-lg overflow-hidden z-50"
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      transition={{ duration: 0.15 }}
+                    >
+                      <div className="px-3 py-2 text-xs text-text-secondary border-b border-border">
+                        Model for this tool
+                      </div>
+                      <button
+                        onClick={() => {
+                          setSelectedModelId(null);
+                          setShowModelDropdown(false);
+                        }}
+                        className={`w-full px-3 py-2 text-left text-sm transition-colors flex items-center gap-2 ${
+                          selectedModelId === null
+                            ? 'text-accent bg-accent/10'
+                            : 'text-text-primary hover:bg-bg-primary'
+                        }`}
+                      >
+                        <span>🌐</span>
+                        <span>Use Stage/Global Default</span>
+                        {selectedModelId === null && <span className="ml-auto text-accent text-xs">✓</span>}
+                      </button>
+                      <div className="border-t border-border" />
+                      {textModels.map((model) => (
+                        <button
+                          key={model.id}
+                          onClick={() => {
+                            setSelectedModelId(model.id);
+                            setShowModelDropdown(false);
+                          }}
+                          className={`w-full px-3 py-2 text-left text-sm transition-colors flex items-center gap-2 ${
+                            selectedModelId === model.id
+                              ? 'text-accent bg-accent/10'
+                              : 'text-text-primary hover:bg-bg-primary'
+                          }`}
+                        >
+                          <span>{model.icon}</span>
+                          <span>{model.name}</span>
+                          {selectedModelId === model.id && <span className="ml-auto text-accent text-xs">✓</span>}
+                        </button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Close button */}
+              <button
+                onClick={handleClose}
+                className="p-2 text-text-secondary hover:text-text-primary hover:bg-bg-primary rounded-lg transition-colors"
+                aria-label="Close panel"
+              >
+                ✕
+              </button>
+            </div>
           </div>
 
           {/* Three-column layout */}

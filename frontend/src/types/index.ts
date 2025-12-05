@@ -70,6 +70,8 @@ export interface SystemStatus {
 }
 
 // AI Models
+export type ModelCategory = 'text' | 'image' | 'voice' | 'video' | 'audio';
+
 export interface AIModel {
   id: string;
   name: string;
@@ -77,6 +79,30 @@ export interface AIModel {
   icon: string;
   contextWindow: string;
   type: string;
+  category: ModelCategory;
+  apiKeyEnv?: string;
+  isAvailable: boolean;
+}
+
+// Integration/Service
+export interface Integration {
+  id: string;
+  name: string;
+  provider: string;
+  category: ModelCategory;
+  icon: string;
+  apiKeyEnv: string;
+  isConfigured: boolean;
+  description: string;
+}
+
+// Navigation
+export type PageRoute = 'dashboard' | 'workflows' | 'models' | 'settings' | 'home';
+
+// Stage Model Override
+export interface StageModelConfig {
+  stageId: string;
+  modelId: string | null; // null means use global default
 }
 
 // Workflows

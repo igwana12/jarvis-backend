@@ -4,7 +4,10 @@ import type {
   PipelineStageConfig,
   Tool,
   SystemMetrics,
-  WSMessage
+  WSMessage,
+  AIModel,
+  PageRoute,
+  StageModelConfig
 } from '../types';
 
 // Pipeline configurations for each workspace mode
@@ -53,11 +56,34 @@ const PIPELINES: Record<WorkspaceMode, PipelineStageConfig[]> = {
   ],
 };
 
+// Default available models
+const DEFAULT_MODELS: AIModel[] = [
+  { id: 'gemini-pro', name: 'Gemini Pro', provider: 'Google', icon: '♊', contextWindow: '1M', type: 'text', category: 'text', apiKeyEnv: 'GOOGLE_AI_STUDIO_API_KEY', isAvailable: true },
+  { id: 'claude-sonnet', name: 'Claude Sonnet', provider: 'Anthropic', icon: '🎭', contextWindow: '200k', type: 'text', category: 'text', apiKeyEnv: 'ANTHROPIC_API_KEY', isAvailable: true },
+  { id: 'gpt-4', name: 'GPT-4', provider: 'OpenAI', icon: '🤖', contextWindow: '128k', type: 'text', category: 'text', apiKeyEnv: 'OPENAI_API_KEY', isAvailable: true },
+  { id: 'grok-2', name: 'Grok 2', provider: 'xAI', icon: '🚀', contextWindow: '128k', type: 'text', category: 'text', apiKeyEnv: 'XAI_API_KEY', isAvailable: false },
+  { id: 'mistral-large', name: 'Mistral Large', provider: 'Mistral', icon: '🇫🇷', contextWindow: '256k', type: 'text', category: 'text', apiKeyEnv: 'MISTRAL_API_KEY', isAvailable: false },
+  { id: 'dall-e-3', name: 'DALL-E 3', provider: 'OpenAI', icon: '🎨', contextWindow: 'N/A', type: 'image', category: 'image', apiKeyEnv: 'OPENAI_API_KEY', isAvailable: true },
+  { id: 'midjourney', name: 'Midjourney', provider: 'Midjourney', icon: '🖼️', contextWindow: 'N/A', type: 'image', category: 'image', apiKeyEnv: 'MIDJOURNEY_API_KEY', isAvailable: false },
+  { id: 'leonardo', name: 'Leonardo AI', provider: 'Leonardo', icon: '🎭', contextWindow: 'N/A', type: 'image', category: 'image', apiKeyEnv: 'LEONARDO_API_KEY', isAvailable: false },
+  { id: 'stable-diffusion', name: 'Stable Diffusion', provider: 'Stability AI', icon: '🌀', contextWindow: 'N/A', type: 'image', category: 'image', apiKeyEnv: 'STABILITY_API_KEY', isAvailable: false },
+  { id: 'elevenlabs', name: 'ElevenLabs', provider: 'ElevenLabs', icon: '🔊', contextWindow: 'N/A', type: 'voice', category: 'voice', apiKeyEnv: 'ELEVENLABS_API_KEY', isAvailable: false },
+  { id: 'whisper', name: 'Whisper', provider: 'OpenAI', icon: '👂', contextWindow: 'N/A', type: 'speech-to-text', category: 'voice', apiKeyEnv: 'OPENAI_API_KEY', isAvailable: true },
+];
+
 interface WorkspaceState {
+  // Navigation
+  currentPage: PageRoute;
+
   // Current selections
   currentMode: WorkspaceMode;
   currentStage: string;
   selectedTool: Tool | null;
+
+  // Model selection
+  globalModel: string;
+  stageModels: StageModelConfig[];
+  availableModels: AIModel[];
 
   // Data
   tools: Tool[];
@@ -68,6 +94,9 @@ interface WorkspaceState {
   isToolPanelOpen: boolean;
   isConnected: boolean;
   isLoading: boolean;
+
+  // Navigation actions
+  setPage: (page: PageRoute) => void;
 
   // Actions
   setMode: (mode: WorkspaceMode) => void;
@@ -81,22 +110,36 @@ interface WorkspaceState {
   setLoading: (loading: boolean) => void;
   toggleToolPanel: () => void;
 
+  // Model actions
+  setGlobalModel: (modelId: string) => void;
+  setStageModel: (stageId: string, modelId: string | null) => void;
+  setAvailableModels: (models: AIModel[]) => void;
+
   // Getters
   getPipelineStages: () => PipelineStageConfig[];
   getFilteredTools: () => Tool[];
+  getModelForStage: (stageId: string) => AIModel | null;
+  getModelsByCategory: (category: string) => AIModel[];
 }
 
 export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   // Initial state
+  currentPage: 'home',
   currentMode: 'storytelling',
   currentStage: 'ideate',
   selectedTool: null,
+  globalModel: 'gemini-pro',
+  stageModels: [],
+  availableModels: DEFAULT_MODELS,
   tools: [],
   messages: [],
   metrics: null,
   isToolPanelOpen: false,
   isConnected: false,
   isLoading: false,
+
+  // Navigation
+  setPage: (page) => set({ currentPage: page }),
 
   // Actions
   setMode: (mode) => {
@@ -133,6 +176,19 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
     isToolPanelOpen: !state.isToolPanelOpen
   })),
 
+  // Model actions
+  setGlobalModel: (modelId) => set({ globalModel: modelId }),
+
+  setStageModel: (stageId, modelId) => set((state) => {
+    const existing = state.stageModels.filter(sm => sm.stageId !== stageId);
+    if (modelId === null) {
+      return { stageModels: existing };
+    }
+    return { stageModels: [...existing, { stageId, modelId }] };
+  }),
+
+  setAvailableModels: (models) => set({ availableModels: models }),
+
   // Getters
   getPipelineStages: () => {
     const { currentMode } = get();
@@ -146,6 +202,18 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       tool.stages.includes(currentStage)
     );
   },
+
+  getModelForStage: (stageId) => {
+    const { stageModels, globalModel, availableModels } = get();
+    const stageConfig = stageModels.find(sm => sm.stageId === stageId);
+    const modelId = stageConfig?.modelId || globalModel;
+    return availableModels.find(m => m.id === modelId) || null;
+  },
+
+  getModelsByCategory: (category) => {
+    const { availableModels } = get();
+    return availableModels.filter(m => m.category === category);
+  },
 }));
 
-export { PIPELINES };
+export { PIPELINES, DEFAULT_MODELS };
