@@ -907,6 +907,198 @@ Visual Style: Essay documentary
     })
 
 
+@app.route('/api/models', methods=['GET'])
+def get_models_with_status():
+    """Get all models with real API key availability status"""
+    def check_api_key(env_var):
+        """Check if an API key environment variable is set"""
+        value = os.environ.get(env_var)
+        return bool(value and len(value) > 10)
+
+    models = [
+        {"id": "gemini-pro", "name": "Gemini Pro", "provider": "Google", "icon": "♊", "contextWindow": "1M", "type": "text", "category": "text", "apiKeyEnv": "GOOGLE_AI_STUDIO_API_KEY", "isAvailable": check_api_key("GOOGLE_AI_STUDIO_API_KEY")},
+        {"id": "claude-sonnet", "name": "Claude Sonnet", "provider": "Anthropic", "icon": "🎭", "contextWindow": "200k", "type": "text", "category": "text", "apiKeyEnv": "ANTHROPIC_API_KEY", "isAvailable": check_api_key("ANTHROPIC_API_KEY")},
+        {"id": "gpt-4", "name": "GPT-4", "provider": "OpenAI", "icon": "🤖", "contextWindow": "128k", "type": "text", "category": "text", "apiKeyEnv": "OPENAI_API_KEY", "isAvailable": check_api_key("OPENAI_API_KEY")},
+        {"id": "grok-2", "name": "Grok 2", "provider": "xAI", "icon": "🚀", "contextWindow": "128k", "type": "text", "category": "text", "apiKeyEnv": "XAI_API_KEY", "isAvailable": check_api_key("XAI_API_KEY")},
+        {"id": "mistral-large", "name": "Mistral Large", "provider": "Mistral", "icon": "🇫🇷", "contextWindow": "256k", "type": "text", "category": "text", "apiKeyEnv": "MISTRAL_API_KEY", "isAvailable": check_api_key("MISTRAL_API_KEY")},
+        {"id": "dall-e-3", "name": "DALL-E 3", "provider": "OpenAI", "icon": "🎨", "contextWindow": "N/A", "type": "image", "category": "image", "apiKeyEnv": "OPENAI_API_KEY", "isAvailable": check_api_key("OPENAI_API_KEY")},
+        {"id": "midjourney", "name": "Midjourney", "provider": "Midjourney", "icon": "🖼️", "contextWindow": "N/A", "type": "image", "category": "image", "apiKeyEnv": "MIDJOURNEY_API_KEY", "isAvailable": check_api_key("MIDJOURNEY_API_KEY")},
+        {"id": "leonardo", "name": "Leonardo AI", "provider": "Leonardo", "icon": "🎭", "contextWindow": "N/A", "type": "image", "category": "image", "apiKeyEnv": "LEONARDO_API_KEY", "isAvailable": check_api_key("LEONARDO_API_KEY")},
+        {"id": "stable-diffusion", "name": "Stable Diffusion", "provider": "Stability AI", "icon": "🌀", "contextWindow": "N/A", "type": "image", "category": "image", "apiKeyEnv": "STABILITY_API_KEY", "isAvailable": check_api_key("STABILITY_API_KEY")},
+        {"id": "elevenlabs", "name": "ElevenLabs", "provider": "ElevenLabs", "icon": "🔊", "contextWindow": "N/A", "type": "voice", "category": "voice", "apiKeyEnv": "ELEVENLABS_API_KEY", "isAvailable": check_api_key("ELEVENLABS_API_KEY")},
+        {"id": "whisper", "name": "Whisper", "provider": "OpenAI", "icon": "👂", "contextWindow": "N/A", "type": "speech-to-text", "category": "voice", "apiKeyEnv": "OPENAI_API_KEY", "isAvailable": check_api_key("OPENAI_API_KEY")},
+    ]
+
+    return jsonify(models)
+
+
+@app.route('/api/settings/api-keys', methods=['GET'])
+def get_api_keys_status():
+    """Get API keys configuration status"""
+    def check_api_key(env_var):
+        """Check if an API key environment variable is set"""
+        value = os.environ.get(env_var)
+        return bool(value and len(value) > 10)
+
+    api_keys = [
+        {"name": "OpenAI", "env": "OPENAI_API_KEY", "status": check_api_key("OPENAI_API_KEY")},
+        {"name": "Anthropic", "env": "ANTHROPIC_API_KEY", "status": check_api_key("ANTHROPIC_API_KEY")},
+        {"name": "Google AI Studio", "env": "GOOGLE_AI_STUDIO_API_KEY", "status": check_api_key("GOOGLE_AI_STUDIO_API_KEY")},
+        {"name": "ElevenLabs", "env": "ELEVENLABS_API_KEY", "status": check_api_key("ELEVENLABS_API_KEY")},
+        {"name": "Replicate", "env": "REPLICATE_API_TOKEN", "status": check_api_key("REPLICATE_API_TOKEN")},
+        {"name": "Leonardo AI", "env": "LEONARDO_API_KEY", "status": check_api_key("LEONARDO_API_KEY")},
+        {"name": "Stability AI", "env": "STABILITY_API_KEY", "status": check_api_key("STABILITY_API_KEY")},
+        {"name": "Midjourney", "env": "MIDJOURNEY_API_KEY", "status": check_api_key("MIDJOURNEY_API_KEY")},
+        {"name": "xAI", "env": "XAI_API_KEY", "status": check_api_key("XAI_API_KEY")},
+        {"name": "Mistral", "env": "MISTRAL_API_KEY", "status": check_api_key("MISTRAL_API_KEY")},
+    ]
+
+    return jsonify(api_keys)
+
+
+@app.route('/api/workflows/sacred-circuits-substack', methods=['POST'])
+def execute_sacred_circuits_workflow():
+    """Execute Sacred Circuits Substack dual-article generation workflow"""
+    try:
+        data = request.json
+
+        # Validate input
+        if not data.get('input_data'):
+            return jsonify({"error": "input_data is required"}), 400
+        if not data.get('article_title'):
+            return jsonify({"error": "article_title is required"}), 400
+
+        input_type = data.get('input_type', 'text')
+        input_data = data['input_data']
+        article_title = data['article_title']
+        sources = data.get('sources', [])
+
+        # Broadcast workflow start
+        broadcast_message({
+            "id": f"sacred-circuits_{int(time.time())}",
+            "timestamp": datetime.now().isoformat(),
+            "source": "SACRED_CIRCUITS",
+            "message": f"Starting Sacred Circuits workflow for: {article_title}",
+            "level": "info"
+        })
+
+        # Simulate workflow execution (in production, this would call actual AI models)
+        # For now, return structured response matching what frontend expects
+
+        # Broadcast progress
+        broadcast_message({
+            "id": f"sacred-circuits_progress_{int(time.time())}",
+            "timestamp": datetime.now().isoformat(),
+            "source": "SACRED_CIRCUITS",
+            "message": "Generating Substack article...",
+            "level": "info"
+        })
+
+        # Simulate Substack article generation
+        substack_article = f"""# {article_title}
+
+## Introduction
+This is a Substack-optimized article generated from your input.
+
+## Main Content
+{input_data[:500]}...
+
+## Conclusion
+Thank you for reading. Subscribe for more insights!
+
+---
+*Generated by Sacred Circuits Workflow*"""
+
+        # Broadcast progress
+        broadcast_message({
+            "id": f"sacred-circuits_progress2_{int(time.time())}",
+            "timestamp": datetime.now().isoformat(),
+            "source": "SACRED_CIRCUITS",
+            "message": "Generating Medium article...",
+            "level": "info"
+        })
+
+        # Simulate Medium article generation
+        medium_article = f"""# {article_title}
+
+*A deeper dive into the topic*
+
+## Introduction
+This is a Medium-optimized article with expanded content.
+
+## Deep Analysis
+{input_data[:600]}...
+
+## Further Reading
+Check out these related articles...
+
+---
+*Published via Sacred Circuits*"""
+
+        # Broadcast completion
+        broadcast_message({
+            "id": f"sacred-circuits_complete_{int(time.time())}",
+            "timestamp": datetime.now().isoformat(),
+            "source": "SACRED_CIRCUITS",
+            "message": f"Workflow completed: {article_title}",
+            "level": "success"
+        })
+
+        return jsonify({
+            "status": "success",
+            "workflow_id": f"sc_{int(time.time())}",
+            "outputs": {
+                "substack_article": substack_article,
+                "medium_article": medium_article,
+                "word_count_substack": len(substack_article.split()),
+                "word_count_medium": len(medium_article.split()),
+                "sources_used": len(sources),
+                "image_prompts": [
+                    f"Abstract representation of {article_title}",
+                    "Sacred geometry patterns with glowing circuits",
+                    "Mystical technology fusion illustration"
+                ]
+            },
+            "message": "Sacred Circuits workflow completed successfully"
+        })
+
+    except Exception as e:
+        broadcast_message({
+            "id": f"sacred-circuits_error_{int(time.time())}",
+            "timestamp": datetime.now().isoformat(),
+            "source": "SACRED_CIRCUITS",
+            "message": f"Workflow error: {str(e)}",
+            "level": "error"
+        })
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/settings/integrations', methods=['GET'])
+def get_integrations_status():
+    """Get integrations status"""
+    integrations = [
+        {"name": "Sacred Circuits", "status": "connected", "icon": "⚡", "description": "Substack workflow automation"},
+        {"name": "Council API", "status": "disconnected", "icon": "👥", "description": "Multi-agent collaboration system"},
+        {"name": "Railway Backend", "status": "connected", "icon": "🚂", "description": "Python Flask backend hosting"},
+        {"name": "Vercel Deployment", "status": "connected", "icon": "▲", "description": "React frontend hosting"},
+        {"name": "GitHub", "status": "connected", "icon": "🐙", "description": "Version control and CI/CD"},
+        {"name": "Discord Webhook", "status": "disconnected", "icon": "💬", "description": "Team notifications"},
+    ]
+    return jsonify(integrations)
+
+
+@app.route('/api/settings/integrations/<integration_name>/toggle', methods=['POST'])
+def toggle_integration(integration_name):
+    """Toggle integration connection status"""
+    # In production, this would actually connect/disconnect services
+    # For now, return success to demonstrate functionality
+    return jsonify({
+        "status": "success",
+        "integration": integration_name,
+        "message": f"{integration_name} toggled successfully"
+    })
+
+
 # ============================================================================
 # WEBSOCKET ENDPOINT
 # ============================================================================

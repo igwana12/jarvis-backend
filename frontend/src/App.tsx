@@ -13,7 +13,7 @@ import {
 import { StoryboardingTool, ComicGeneratorTool, PodcastStudioTool, PromptCrafterTool, TradingDashboardTool } from './components/tools/specialized';
 import { Dashboard, Workflows, Models, Settings } from './pages';
 import { useWorkspaceStore } from './stores/workspaceStore';
-import { checkHealth } from './services/api';
+import { checkHealth, getModelsWithStatus } from './services/api';
 
 // Create React Query client
 const queryClient = new QueryClient({
@@ -102,7 +102,7 @@ function HomePage() {
 }
 
 function MainApp() {
-  const { currentPage, addMessage } = useWorkspaceStore();
+  const { currentPage, addMessage, setAvailableModels } = useWorkspaceStore();
 
   useEffect(() => {
     // Check backend health on mount
@@ -116,6 +116,11 @@ function MainApp() {
           message: `Backend connected: ${health.backend} v${health.version}`,
           level: 'success',
         });
+
+        // Fetch real model availability from backend
+        const models = await getModelsWithStatus();
+        setAvailableModels(models);
+
       } catch (error) {
         addMessage({
           id: `health-error-${Date.now()}`,
@@ -128,7 +133,7 @@ function MainApp() {
     };
 
     checkBackend();
-  }, [addMessage]);
+  }, [addMessage, setAvailableModels]);
 
   // Render page based on current route
   const renderPage = () => {

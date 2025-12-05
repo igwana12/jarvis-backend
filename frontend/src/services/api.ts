@@ -204,5 +204,28 @@ export const createComic = async (description: string) => {
   return response.data;
 };
 
+// New Models API
+export const getModelsWithStatus = async () => {
+  const response = await api.get('/api/models');
+  return response.data;
+};
+
+// Settings - API Keys
+export const getAPIKeysStatus = async () => {
+  const response = await api.get('/api/settings/api-keys');
+  return response.data;
+};
+
+// Settings - Integrations
+export const getIntegrationsStatus = async () => {
+  const response = await api.get('/api/settings/integrations');
+  return response.data;
+};
+
+export const toggleIntegration = async (integrationName: string) => {
+  const response = await api.post(`/api/settings/integrations/${integrationName}/toggle`);
+  return response.data;
+};
+
 // Export the api instance for custom requests
 export default api;
