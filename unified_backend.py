@@ -27,7 +27,7 @@ app = Flask(__name__)
 # CORS Configuration - restrict to production domains
 ALLOWED_ORIGINS = os.environ.get(
     'ALLOWED_ORIGINS',
-    'https://cockpit.nikoskatsaounis.com,https://ai-command.nikoskatsaounis.com,https://v0-cockpit-source-kzi3n3jsx-nikos-projects-9639ae0e.vercel.app,https://ai-command-center-6a1nwu7pw-nikos-projects-9639ae0e.vercel.app'
+    'https://jarvis.nikoskatsaounis.com,https://frontend-43ivdy5me-nikos-projects-9639ae0e.vercel.app,https://cockpit.nikoskatsaounis.com,https://ai-command.nikoskatsaounis.com,https://v0-cockpit-source-kzi3n3jsx-nikos-projects-9639ae0e.vercel.app,https://ai-command-center-6a1nwu7pw-nikos-projects-9639ae0e.vercel.app'
 ).split(',')
 
 CORS(app, resources={r"/*": {"origins": ALLOWED_ORIGINS}})
