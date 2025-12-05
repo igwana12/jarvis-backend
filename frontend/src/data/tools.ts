@@ -563,6 +563,48 @@ export const VIDEO_TOOLS: Tool[] = [
 ];
 
 // ============================================
+// CREATIVE AUTOMATION TOOLS
+// ============================================
+export const CREATIVE_AUTOMATION_TOOLS: Tool[] = [
+  createTool(
+    'comic-generator',
+    'Comic Generator',
+    'Create stunning comic panels and graphic novels with AI',
+    'creative',
+    '📚',
+    ['storytelling', 'filmmaking', 'multi'],
+    ['ideate', 'concept', 'create', 'draft']
+  ),
+  createTool(
+    'podcast-studio',
+    'Podcast Studio',
+    'Full-featured podcast creation with AI hosts and effects',
+    'creative',
+    '🎙️',
+    ['podcast', 'multi'],
+    ['topic', 'script', 'record', 'edit', 'publish']
+  ),
+  createTool(
+    'prompt-crafter',
+    'AI Prompt Crafter',
+    'Craft optimized prompts for any AI model',
+    'creative',
+    '🎯',
+    ['storytelling', 'filmmaking', 'podcast', 'soundscape', 'audiobook', 'multi'],
+    ['ideate', 'concept', 'topic', 'plan', 'create']
+  ),
+  createTool(
+    'trading-dashboard',
+    'Trading Dashboard',
+    'Real-time portfolio tracking with AI analysis',
+    'creative',
+    '📈',
+    ['multi'],
+    ['plan', 'review', 'deploy']
+  ),
+];
+
+// ============================================
 // ALL TOOLS COMBINED
 // ============================================
 export const ALL_TOOLS: Tool[] = [
@@ -574,6 +616,7 @@ export const ALL_TOOLS: Tool[] = [
   ...ENHANCEMENT_TOOLS,
   ...INTEGRATION_TOOLS,
   ...VIDEO_TOOLS,
+  ...CREATIVE_AUTOMATION_TOOLS,
 ];
 
 // Tool categories for filtering
@@ -589,6 +632,7 @@ export const TOOL_CATEGORIES = [
   { id: 'distribution', name: 'Distribution', icon: '📱' },
   { id: 'enhancement', name: 'Enhancement', icon: '✨' },
   { id: 'integration', name: 'Integration', icon: '🔌' },
+  { id: 'creative', name: 'Creative', icon: '🚀' },
 ];
 
 // Get tools by category

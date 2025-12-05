@@ -9,7 +9,7 @@ import {
   ToolPalette,
   UniversalToolPanel,
 } from './components';
-import { StoryboardingTool } from './components/tools/specialized';
+import { StoryboardingTool, ComicGeneratorTool, PodcastStudioTool, PromptCrafterTool, TradingDashboardTool } from './components/tools/specialized';
 import { Dashboard, Workflows, Models, Settings } from './pages';
 import { useWorkspaceStore } from './stores/workspaceStore';
 import { checkHealth } from './services/api';
@@ -164,6 +164,10 @@ function MainApp() {
 
       {/* Specialized Tool Panels */}
       <StoryboardingTool />
+      <ComicGeneratorTool />
+      <PodcastStudioTool />
+      <PromptCrafterTool />
+      <TradingDashboardTool />
     </div>
   );
 }
