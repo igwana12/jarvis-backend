@@ -9,6 +9,7 @@ import {
   ToolPalette,
   UniversalToolPanel,
 } from './components';
+import { StoryboardingTool } from './components/tools/specialized';
 import { Dashboard, Workflows, Models, Settings } from './pages';
 import { useWorkspaceStore } from './stores/workspaceStore';
 import { checkHealth } from './services/api';
@@ -160,6 +161,9 @@ function MainApp() {
 
       {/* Universal Tool Panel (Modal) */}
       <UniversalToolPanel />
+
+      {/* Specialized Tool Panels */}
+      <StoryboardingTool />
     </div>
   );
 }

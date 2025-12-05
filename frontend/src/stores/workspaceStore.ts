@@ -9,6 +9,7 @@ import type {
   PageRoute,
   StageModelConfig
 } from '../types';
+import { ALL_TOOLS } from '../data/tools';
 
 // Pipeline configurations for each workspace mode
 const PIPELINES: Record<WorkspaceMode, PipelineStageConfig[]> = {
@@ -131,7 +132,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   globalModel: 'gemini-pro',
   stageModels: [],
   availableModels: DEFAULT_MODELS,
-  tools: [],
+  tools: ALL_TOOLS,
   messages: [],
   metrics: null,
   isToolPanelOpen: false,
