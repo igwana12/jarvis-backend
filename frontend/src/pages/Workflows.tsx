@@ -103,21 +103,26 @@ export function Workflows() {
         <h2 className="text-lg font-semibold text-text-primary mb-4">Preset Workflows</h2>
         <div className="grid grid-cols-3 gap-4">
           {[
-            { name: 'Story to Video', icon: '📖➡️🎬', description: 'Convert a story into a video' },
-            { name: 'Podcast Episode', icon: '🎙️', description: 'Full podcast production pipeline' },
-            { name: 'Content Repurpose', icon: '♻️', description: 'Turn one piece into multiple formats' },
-            { name: 'Image Generation Batch', icon: '🖼️', description: 'Generate multiple images' },
-            { name: 'Audiobook Creation', icon: '📚🔊', description: 'Text to audiobook' },
-            { name: 'Social Media Pack', icon: '📱', description: 'Create content for all platforms' },
+            { name: 'Comic Generator', icon: '🎨', description: 'Create stunning comic panels with AI', page: 'comic-generator' as const },
+            { name: 'Podcast Studio', icon: '🎙️', description: 'Full podcast production pipeline', page: 'podcast-studio' as const },
+            { name: 'Prompt Crafter', icon: '✨', description: 'Create optimized prompts for any AI', page: 'prompt-crafter' as const },
+            { name: 'Trading Dashboard', icon: '📊', description: 'Custom trading analytics dashboard', page: 'trading-dashboard' as const },
+            { name: 'Content Repurpose', icon: '♻️', description: 'Turn one piece into multiple formats', page: null },
+            { name: 'Social Media Pack', icon: '📱', description: 'Create content for all platforms', page: null },
           ].map((preset) => (
             <motion.button
               key={preset.name}
-              className="p-4 bg-bg-secondary rounded-lg border border-border text-left hover:border-accent/50 transition-colors"
-              whileHover={{ scale: 1.02 }}
+              onClick={() => preset.page && setPage(preset.page)}
+              className="p-4 bg-bg-secondary rounded-lg border border-border text-left hover:border-accent/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              whileHover={preset.page ? { scale: 1.02 } : {}}
+              disabled={!preset.page}
             >
               <div className="text-2xl mb-2">{preset.icon}</div>
               <div className="font-medium text-text-primary">{preset.name}</div>
               <div className="text-xs text-text-secondary">{preset.description}</div>
+              {!preset.page && (
+                <div className="text-xs text-accent mt-2">Coming Soon</div>
+              )}
             </motion.button>
           ))}
         </div>

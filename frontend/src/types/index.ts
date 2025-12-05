@@ -97,7 +97,7 @@ export interface Integration {
 }
 
 // Navigation
-export type PageRoute = 'dashboard' | 'workflows' | 'models' | 'settings' | 'home';
+export type PageRoute = 'dashboard' | 'workflows' | 'models' | 'settings' | 'home' | 'comic-generator' | 'podcast-studio' | 'prompt-crafter' | 'trading-dashboard';
 
 // Stage Model Override
 export interface StageModelConfig {

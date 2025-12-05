@@ -12,6 +12,7 @@ import {
 } from './components';
 import { StoryboardingTool, ComicGeneratorTool, PodcastStudioTool, PromptCrafterTool, TradingDashboardTool } from './components/tools/specialized';
 import { Dashboard, Workflows, Models, Settings } from './pages';
+import { ComicGeneratorWorkflow, PodcastStudioWorkflow, PromptCrafterWorkflow, TradingDashboardWorkflow } from './pages/workflows';
 import { useWorkspaceStore } from './stores/workspaceStore';
 import { checkHealth, getModelsWithStatus } from './services/api';
 
@@ -146,6 +147,14 @@ function MainApp() {
         return <Models />;
       case 'settings':
         return <Settings />;
+      case 'comic-generator':
+        return <ComicGeneratorWorkflow />;
+      case 'podcast-studio':
+        return <PodcastStudioWorkflow />;
+      case 'prompt-crafter':
+        return <PromptCrafterWorkflow />;
+      case 'trading-dashboard':
+        return <TradingDashboardWorkflow />;
       case 'home':
       default:
         return <HomePage />;
