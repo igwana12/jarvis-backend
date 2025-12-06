@@ -1,93 +1,79 @@
 @import "tailwindcss";
 
-/* Cyberpunk Dark Theme - Custom Tailwind Variables */
-@theme {
-  --color-bg-primary: #0a0a0a;
-  --color-bg-secondary: #1a1a1a;
-  --color-accent: #00ff00;
-  --color-accent-dim: #00cc00;
-  --color-text-primary: #ffffff;
-  --color-text-secondary: #a0a0a0;
-  --color-border: #2a2a2a;
-  --color-neon-green: #00ff00;
-  --color-neon-blue: #00ffff;
-  --color-neon-purple: #ff00ff;
-
-  --font-family-mono: 'JetBrains Mono', 'Fira Code', Monaco, monospace;
-  --font-family-sans: 'Inter', system-ui, sans-serif;
-}
-
-/* Base styles */
-* {
+/* Base resets */
+*, *::before, *::after {
   box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
 html {
   color-scheme: dark;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
-  margin: 0;
-  padding: 0;
-  font-family: 'Inter', system-ui, sans-serif;
-  background-color: var(--color-bg-primary);
-  color: var(--color-text-primary);
+  font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  background-color: #050507;
+  color: #e5e5e5;
   min-height: 100vh;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 #root {
   min-height: 100vh;
+  isolation: isolate;
 }
 
-/* Scrollbar Styling */
+/* Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--color-bg-secondary);
+  background: #0a0a0f;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--color-border);
+  background: #2a2a35;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-accent);
+  background: #00d4ff;
 }
 
-/* Neon Glow Effects */
-@utility neon-border {
-  border: 1px solid var(--color-accent);
-  box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
-}
-
-@utility neon-glow {
-  box-shadow: 0 0 20px rgba(0, 255, 0, 0.4);
-}
-
-@utility neon-text {
-  text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
-}
-
-/* Focus styles for accessibility */
-*:focus-visible {
-  outline: 2px solid var(--color-accent);
+/* Focus */
+:focus-visible {
+  outline: 2px solid #00d4ff;
   outline-offset: 2px;
 }
 
-/* Button base styles */
+/* Selection */
+::selection {
+  background-color: rgba(0, 212, 255, 0.3);
+  color: white;
+}
+
+/* Button reset */
 button {
   cursor: pointer;
-  transition: all 0.2s ease-in-out;
+  font-family: inherit;
+  border: none;
+  background: transparent;
 }
 
-button:hover {
-  transform: scale(1.02);
+/* Image reset */
+img, svg {
+  display: block;
+  max-width: 100%;
 }
 
-button:active {
-  transform: scale(0.98);
+/* Input reset */
+input, textarea, select {
+  font-family: inherit;
+  font-size: inherit;
 }

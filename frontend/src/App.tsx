@@ -87,7 +87,7 @@ function MainApp() {
       </header>
 
       {/* MAIN CONTENT AREA */}
-      <main className="p-8 max-w-[1600px] mx-auto animate-in fade-in duration-500">
+      <main className="p-8 max-w-[1600px] mx-auto">
         {currentView === 'dashboard' ? (
           <>
             <div className="flex items-center justify-between mb-6">
