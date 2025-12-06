@@ -33,75 +33,41 @@ function HomePage() {
   const { currentMode, currentStage } = useWorkspaceStore();
 
   return (
-    <main className="flex-1 flex flex-col overflow-hidden p-4 gap-4">
-      {/* Layer 1: Workspace Mode Selector */}
-      <motion.section
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-      >
-        <WorkspaceModeSelector />
-      </motion.section>
+    <div className="flex-1 bg-bg-secondary rounded-lg border border-border p-6 overflow-y-auto">
+      <div className="text-center py-12">
+        <motion.div
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ delay: 0.4 }}
+        >
+          <span className="text-6xl mb-4 block">🎯</span>
+          <h2 className="text-2xl font-bold text-text-primary mb-2">
+            Welcome to JARVIS Mission Control
+          </h2>
+          <p className="text-text-secondary max-w-md mx-auto mb-6">
+            Select a tool from the palette to get started. Your current workspace
+            is <span className="text-accent font-medium">{currentMode}</span> in
+            the <span className="text-accent font-medium">{currentStage}</span> stage.
+          </p>
 
-      {/* Layer 2: Pipeline Stage Navigator */}
-      <motion.section
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-      >
-        <PipelineStageNavigator />
-      </motion.section>
-
-      {/* Main workspace area */}
-      <motion.div
-        className="flex-1 flex gap-4 min-h-0"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.3 }}
-      >
-        {/* Layer 3: Tool Palette (Sidebar) */}
-        <aside className="w-80 flex-shrink-0">
-          <ToolPalette />
-        </aside>
-
-        {/* Main content area */}
-        <div className="flex-1 bg-bg-secondary rounded-lg border border-border p-6 overflow-y-auto">
-          <div className="text-center py-12">
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.4 }}
-            >
-              <span className="text-6xl mb-4 block">🎯</span>
-              <h2 className="text-2xl font-bold text-text-primary mb-2">
-                Welcome to JARVIS Mission Control
-              </h2>
-              <p className="text-text-secondary max-w-md mx-auto mb-6">
-                Select a tool from the palette to get started. Your current workspace
-                is <span className="text-accent font-medium">{currentMode}</span> in
-                the <span className="text-accent font-medium">{currentStage}</span> stage.
-              </p>
-
-              {/* Quick stats */}
-              <div className="flex justify-center gap-6 mt-8">
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-accent">35+</div>
-                  <div className="text-xs text-text-secondary">Dashboards</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-accent">300+</div>
-                  <div className="text-xs text-text-secondary">Tools</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-accent">6</div>
-                  <div className="text-xs text-text-secondary">Workspace Modes</div>
-                </div>
-              </div>
-            </motion.div>
+          {/* Quick stats */}
+          <div className="flex justify-center gap-6 mt-8">
+            <div className="text-center">
+              <div className="text-3xl font-bold text-accent">35+</div>
+              <div className="text-xs text-text-secondary">Dashboards</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl font-bold text-accent">300+</div>
+              <div className="text-xs text-text-secondary">Tools</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl font-bold text-accent">6</div>
+              <div className="text-xs text-text-secondary">Workspace Modes</div>
+            </div>
           </div>
-        </div>
-      </motion.div>
-    </main>
+        </motion.div>
+      </div>
+    </div>
   );
 }
 
@@ -139,6 +105,10 @@ function MainApp() {
     checkBackend();
   }, [addMessage, setAvailableModels]);
 
+  // Define which pages show workspace context UI (modes, stages, tools)
+  const workspacePages: PageRoute[] = ['home', 'comic-generator', 'podcast-studio', 'prompt-crafter', 'trading-dashboard'];
+  const showContextUI = workspacePages.includes(currentPage);
+
   // Render page based on current route
   const renderPage = () => {
     switch (currentPage) {
@@ -166,15 +136,57 @@ function MainApp() {
 
   return (
     <div className="flex flex-col h-screen bg-bg-primary">
-      {/* Header */}
+      {/* Global Header - Always visible */}
       <Header />
 
-      {/* Page Content */}
-      <div className="flex-1 overflow-y-auto">
-        {renderPage()}
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {showContextUI ? (
+          /* Workspace Pages - With Context UI */
+          <main className="flex-1 flex flex-col overflow-hidden p-4 gap-4">
+            {/* Workspace Mode Selector */}
+            <motion.section
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+            >
+              <WorkspaceModeSelector />
+            </motion.section>
+
+            {/* Pipeline Stage Navigator */}
+            <motion.section
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <PipelineStageNavigator />
+            </motion.section>
+
+            {/* Main workspace area with tool palette */}
+            <motion.div
+              className="flex-1 flex gap-4 min-h-0"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
+            >
+              {/* Tool Palette Sidebar */}
+              <aside className="w-80 flex-shrink-0">
+                <ToolPalette />
+              </aside>
+
+              {/* Page Content */}
+              {renderPage()}
+            </motion.div>
+          </main>
+        ) : (
+          /* Admin Pages - Content Only */
+          <div className="flex-1 overflow-y-auto">
+            {renderPage()}
+          </div>
+        )}
       </div>
 
-      {/* Status Bar */}
+      {/* Global Status Bar - Always visible */}
       <StatusBar />
 
       {/* Universal Tool Panel (Modal) */}
