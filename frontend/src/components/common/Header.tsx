@@ -140,13 +140,22 @@ export function Header({ onMenuToggle }: HeaderProps) {
               ➕ New Workflow
             </button>
             <div className="border-t border-border my-1" />
-            <button className="w-full px-4 py-2 text-left text-sm text-text-secondary hover:bg-bg-primary transition-colors">
+            <button
+              onClick={() => handleNavClick('comic-generator')}
+              className="w-full px-4 py-2 text-left text-sm text-text-secondary hover:bg-bg-primary transition-colors"
+            >
               📖 Story to Video
             </button>
-            <button className="w-full px-4 py-2 text-left text-sm text-text-secondary hover:bg-bg-primary transition-colors">
+            <button
+              onClick={() => handleNavClick('podcast-studio')}
+              className="w-full px-4 py-2 text-left text-sm text-text-secondary hover:bg-bg-primary transition-colors"
+            >
               🎙️ Podcast Episode
             </button>
-            <button className="w-full px-4 py-2 text-left text-sm text-text-secondary hover:bg-bg-primary transition-colors">
+            <button
+              onClick={() => handleNavClick('prompt-crafter')}
+              className="w-full px-4 py-2 text-left text-sm text-text-secondary hover:bg-bg-primary transition-colors"
+            >
               📚 Audiobook Creation
             </button>
           </Dropdown>

@@ -12,7 +12,10 @@ import {
 } from './components';
 import { StoryboardingTool, ComicGeneratorTool, PodcastStudioTool, PromptCrafterTool, TradingDashboardTool } from './components/tools/specialized';
 import { Dashboard, Workflows, Models, Settings } from './pages';
-import { ComicGeneratorWorkflow, PodcastStudioWorkflow, PromptCrafterWorkflow, TradingDashboardWorkflow } from './pages/workflows';
+import { ComicGeneratorWorkflow } from './pages/workflows/ComicGeneratorWorkflow';
+import { PodcastStudioWorkflow } from './pages/workflows/PodcastStudioWorkflow';
+import { PromptCrafterWorkflow } from './pages/workflows/PromptCrafterWorkflow';
+import { TradingDashboardWorkflow } from './pages/workflows/TradingDashboardWorkflow';
 import { useWorkspaceStore } from './stores/workspaceStore';
 import { checkHealth, getModelsWithStatus } from './services/api';
 

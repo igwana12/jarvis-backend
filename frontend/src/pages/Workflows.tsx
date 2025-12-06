@@ -112,7 +112,11 @@ export function Workflows() {
           ].map((preset) => (
             <motion.button
               key={preset.name}
-              onClick={() => preset.page && setPage(preset.page)}
+              onClick={() => {
+                if (preset.page) {
+                  setPage(preset.page);
+                }
+              }}
               className="p-4 bg-bg-secondary rounded-lg border border-border text-left hover:border-accent/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               whileHover={preset.page ? { scale: 1.02 } : {}}
               disabled={!preset.page}
