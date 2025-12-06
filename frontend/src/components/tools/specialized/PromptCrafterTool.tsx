@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useWorkspaceStore } from '../../../stores/workspaceStore';
+import { generateContent } from '../../../services/api';
 
 interface PromptTemplate {
   id: string;
@@ -152,9 +153,20 @@ export function PromptCrafterTool({ isOpen: propIsOpen, onClose: propOnClose }: 
 
     setIsOptimizing(true);
 
-    // Simulate optimization with model-specific enhancements
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    try {
+      // Call backend API for AI-powered optimization
+      const optimizationPrompt = `Optimize this prompt for ${targetModel.name} (${targetModel.type} model): "${rawPrompt}". Make it more specific, clear, and effective for the target model.`;
+      const response = await generateContent(optimizationPrompt, 'prompt-optimizer');
+      if (response?.content) {
+        setOptimizedPrompt(response.content);
+        setIsOptimizing(false);
+        return;
+      }
+    } catch (error) {
+      console.error('Failed to optimize via API:', error);
+    }
 
+    // Fallback to local optimization
     let enhanced = rawPrompt;
     const modelType = getModelType();
 

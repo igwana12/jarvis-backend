@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useWorkspaceStore } from '../../../stores/workspaceStore';
+import { trackCost, getCurrentCosts } from '../../../services/api';
 
 interface Asset {
   symbol: string;
@@ -77,6 +78,21 @@ export function TradingDashboardTool({ isOpen: propIsOpen, onClose: propOnClose 
   const [tradeQuantity, setTradeQuantity] = useState('');
   const [showTradeConfirm, setShowTradeConfirm] = useState(false);
 
+  // Fetch current costs on mount
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const fetchCosts = async () => {
+      try {
+        const costs = await getCurrentCosts();
+        console.log('Current costs:', costs);
+      } catch (error) {
+        console.error('Failed to fetch costs:', error);
+      }
+    };
+    fetchCosts();
+  }, [isOpen]);
+
   // Simulate real-time price updates
   useEffect(() => {
     if (!isOpen) return;
@@ -109,17 +125,27 @@ export function TradingDashboardTool({ isOpen: propIsOpen, onClose: propOnClose 
   const totalPnL = totalValue - totalCost;
   const totalPnLPercent = (totalPnL / totalCost) * 100;
 
-  const executeTrade = () => {
+  const executeTrade = async () => {
     if (!selectedAsset || !tradeQuantity) return;
 
     const quantity = parseFloat(tradeQuantity);
+    const total = quantity * selectedAsset.price;
+
+    // Track trade cost via backend API
+    try {
+      await trackCost('trading', total * 0.001); // Track 0.1% trading fee
+      console.log('Trade cost tracked successfully');
+    } catch (error) {
+      console.error('Failed to track trade cost:', error);
+    }
+
     const trade: Trade = {
       id: `trade-${Date.now()}`,
       symbol: selectedAsset.symbol,
       type: tradeType,
       quantity,
       price: selectedAsset.price,
-      total: quantity * selectedAsset.price,
+      total,
       timestamp: new Date(),
     };
 

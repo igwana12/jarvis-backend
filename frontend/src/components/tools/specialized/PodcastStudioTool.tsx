@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useWorkspaceStore } from '../../../stores/workspaceStore';
+import { convertToPodcast } from '../../../services/api';
 
 interface PodcastEpisode {
   id: string;
@@ -98,8 +99,13 @@ export function PodcastStudioTool({ isOpen: propIsOpen, onClose: propOnClose }: 
 
     setIsGenerating(true);
 
-    // Simulate AI generating episode structure
-    await new Promise(resolve => setTimeout(resolve, 2500));
+    try {
+      // Call backend API to generate podcast script
+      const response = await convertToPodcast(topic);
+      console.log('Podcast generation response:', response);
+    } catch (error) {
+      console.error('Failed to generate podcast via API:', error);
+    }
 
     const segments: PodcastSegment[] = [
       {

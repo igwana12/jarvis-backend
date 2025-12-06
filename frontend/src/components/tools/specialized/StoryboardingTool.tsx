@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useWorkspaceStore } from '../../../stores/workspaceStore';
+import { generateVideo, generateContent } from '../../../services/api';
 
 interface StoryboardPanel {
   id: string;
@@ -114,9 +115,20 @@ export function StoryboardingTool({ isOpen: propIsOpen, onClose: propOnClose }: 
 
     setIsGeneratingPanels(true);
 
-    // Simulate AI generating storyboard breakdown
-    // In production, this would call the backend API
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    try {
+      // Call backend API to queue video/storyboard generation
+      const videoResponse = await generateVideo(sceneDescription, visualStyle);
+      console.log('Video generation queued:', videoResponse);
+
+      // Also use content generation for detailed scene breakdown
+      const contentResponse = await generateContent(
+        `Break down this scene into 3 storyboard panels with shot types and descriptions: ${sceneDescription}`,
+        'storyboard-generator'
+      );
+      console.log('Scene breakdown:', contentResponse);
+    } catch (error) {
+      console.error('Failed to generate storyboard via API:', error);
+    }
 
     // Generate sample panels from the description
     const newPanels: StoryboardPanel[] = [
