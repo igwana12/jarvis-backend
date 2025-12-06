@@ -69,8 +69,17 @@ function generateGwennPrompt(panel: StoryboardPanel, style: string): string {
   return gwennPrompt;
 }
 
-export function StoryboardingTool() {
+interface StoryboardingToolProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+}
+
+export function StoryboardingTool({ isOpen: propIsOpen, onClose: propOnClose }: StoryboardingToolProps = {}) {
   const { selectTool, isToolPanelOpen, selectedTool, availableModels, globalModel } = useWorkspaceStore();
+
+  // Support both prop-based and store-based control
+  const isOpen = propIsOpen !== undefined ? propIsOpen : (isToolPanelOpen && selectedTool?.id === 'storyboard-generator');
+  const handleClose = propOnClose || (() => selectTool(null));
   const [panels, setPanels] = useState<StoryboardPanel[]>([]);
   const [sceneDescription, setSceneDescription] = useState('');
   const [selectedImageModel, setSelectedImageModel] = useState('midjourney');
@@ -95,12 +104,10 @@ export function StoryboardingTool() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showModelDropdown]);
 
-  // Only show if this tool is selected
-  if (!selectedTool || selectedTool.id !== 'storyboard-generator' || !isToolPanelOpen) {
+  // Only show if open
+  if (!isOpen) {
     return null;
   }
-
-  const handleClose = () => selectTool(null);
 
   const generateStoryboardPanels = async () => {
     if (!sceneDescription.trim()) return;

@@ -85,8 +85,17 @@ function generateComicPrompt(panel: ComicPanel, style: string): string {
   return prompt;
 }
 
-export function ComicGeneratorTool() {
+interface ComicGeneratorToolProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+}
+
+export function ComicGeneratorTool({ isOpen: propIsOpen, onClose: propOnClose }: ComicGeneratorToolProps = {}) {
   const { selectTool, isToolPanelOpen, selectedTool } = useWorkspaceStore();
+
+  // Support both prop-based and store-based control
+  const isOpen = propIsOpen !== undefined ? propIsOpen : (isToolPanelOpen && selectedTool?.id === 'comic-generator');
+  const handleClose = propOnClose || (() => selectTool(null));
   const [project, setProject] = useState<ComicProject | null>(null);
   const [storyDescription, setStoryDescription] = useState('');
   const [selectedStyle, setSelectedStyle] = useState('manga');
@@ -110,12 +119,10 @@ export function ComicGeneratorTool() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showStyleDropdown]);
 
-  // Only show if this tool is selected
-  if (!selectedTool || selectedTool.id !== 'comic-generator' || !isToolPanelOpen) {
+  // Only show if open
+  if (!isOpen) {
     return null;
   }
-
-  const handleClose = () => selectTool(null);
 
   const generateStoryPanels = async () => {
     if (!storyDescription.trim()) return;

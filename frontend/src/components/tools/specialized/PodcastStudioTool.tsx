@@ -53,8 +53,18 @@ const SEGMENT_TYPES = [
   { id: 'outro', name: 'Outro', icon: '👋', duration: '1-2 min' },
 ];
 
-export function PodcastStudioTool() {
+interface PodcastStudioToolProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+}
+
+export function PodcastStudioTool({ isOpen: propIsOpen, onClose: propOnClose }: PodcastStudioToolProps = {}) {
   const { selectTool, isToolPanelOpen, selectedTool } = useWorkspaceStore();
+
+  // Support both prop-based and store-based control
+  const isOpen = propIsOpen !== undefined ? propIsOpen : (isToolPanelOpen && selectedTool?.id === 'podcast-studio');
+  const handleClose = propOnClose || (() => selectTool(null));
+
   const [episode, setEpisode] = useState<PodcastEpisode | null>(null);
   const [topic, setTopic] = useState('');
   const [selectedStyle, setSelectedStyle] = useState('conversational');
@@ -78,12 +88,10 @@ export function PodcastStudioTool() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showStyleDropdown]);
 
-  // Only show if this tool is selected
-  if (!selectedTool || selectedTool.id !== 'podcast-studio' || !isToolPanelOpen) {
+  // Only show if open
+  if (!isOpen) {
     return null;
   }
-
-  const handleClose = () => selectTool(null);
 
   const generateEpisode = async () => {
     if (!topic.trim()) return;

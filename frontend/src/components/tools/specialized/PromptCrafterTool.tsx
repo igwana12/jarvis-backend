@@ -117,8 +117,17 @@ const OPTIMIZATION_TIPS = {
   ],
 };
 
-export function PromptCrafterTool() {
+interface PromptCrafterToolProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+}
+
+export function PromptCrafterTool({ isOpen: propIsOpen, onClose: propOnClose }: PromptCrafterToolProps = {}) {
   const { selectTool, isToolPanelOpen, selectedTool } = useWorkspaceStore();
+
+  // Support both prop-based and store-based control
+  const isOpen = propIsOpen !== undefined ? propIsOpen : (isToolPanelOpen && selectedTool?.id === 'prompt-crafter');
+  const handleClose = propOnClose || (() => selectTool(null));
 
   const [activeTab, setActiveTab] = useState<'craft' | 'templates' | 'history' | 'optimize'>('craft');
   const [targetModel, setTargetModel] = useState(TARGET_MODELS[0]);
@@ -132,13 +141,7 @@ export function PromptCrafterTool() {
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [showCopyToast, setShowCopyToast] = useState(false);
 
-  const isOpen = isToolPanelOpen && selectedTool?.id === 'prompt-crafter';
-
   if (!isOpen) return null;
-
-  const handleClose = () => {
-    selectTool(null);
-  };
 
   const getModelType = () => {
     return targetModel.type as 'text' | 'image' | 'audio';

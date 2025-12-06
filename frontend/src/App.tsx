@@ -1,19 +1,19 @@
-import { useEffect } from 'react';
+import { useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { motion } from 'framer-motion';
+import SystemMetricsCard from './components/dashboard/SystemMetricsCard';
+import CostTrackerWidget from './components/dashboard/CostTrackerWidget';
+import ActiveWorkflowsWidget from './components/dashboard/ActiveWorkflowsWidget';
+import ModelSelector from './components/models/ModelSelector';
+import APIKeysTab from './components/settings/APIKeysTab';
+import { AuthGate } from './components/auth/AuthGate';
 import {
-  Header,
-  StatusBar,
-  WorkspaceModeSelector,
-  PipelineStageNavigator,
-  ToolPalette,
-  UniversalToolPanel,
-  AuthGate,
-} from './components';
-import { StoryboardingTool, ComicGeneratorTool, PodcastStudioTool, PromptCrafterTool, TradingDashboardTool } from './components/tools/specialized';
-import { Dashboard, Workflows, Models, Settings } from './pages';
-import { useWorkspaceStore } from './stores/workspaceStore';
-import { checkHealth } from './services/api';
+  StoryboardingTool,
+  ComicGeneratorTool,
+  PodcastStudioTool,
+  PromptCrafterTool,
+  TradingDashboardTool,
+} from './components/tools/specialized';
+import { Command, Settings as SettingsIcon, Home, Sparkles } from 'lucide-react';
 
 // Create React Query client
 const queryClient = new QueryClient({
@@ -25,150 +25,157 @@ const queryClient = new QueryClient({
   },
 });
 
-function HomePage() {
-  const { currentMode, currentStage } = useWorkspaceStore();
-
-  return (
-    <main className="flex-1 flex flex-col overflow-hidden p-4 gap-4">
-      {/* Layer 1: Workspace Mode Selector */}
-      <motion.section
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-      >
-        <WorkspaceModeSelector />
-      </motion.section>
-
-      {/* Layer 2: Pipeline Stage Navigator */}
-      <motion.section
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-      >
-        <PipelineStageNavigator />
-      </motion.section>
-
-      {/* Main workspace area */}
-      <motion.div
-        className="flex-1 flex gap-4 min-h-0"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.3 }}
-      >
-        {/* Layer 3: Tool Palette (Sidebar) */}
-        <aside className="w-80 flex-shrink-0">
-          <ToolPalette />
-        </aside>
-
-        {/* Main content area */}
-        <div className="flex-1 bg-bg-secondary rounded-lg border border-border p-6 overflow-y-auto">
-          <div className="text-center py-12">
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.4 }}
-            >
-              <span className="text-6xl mb-4 block">🎯</span>
-              <h2 className="text-2xl font-bold text-text-primary mb-2">
-                Welcome to JARVIS Mission Control
-              </h2>
-              <p className="text-text-secondary max-w-md mx-auto mb-6">
-                Select a tool from the palette to get started. Your current workspace
-                is <span className="text-accent font-medium">{currentMode}</span> in
-                the <span className="text-accent font-medium">{currentStage}</span> stage.
-              </p>
-
-              {/* Quick stats */}
-              <div className="flex justify-center gap-6 mt-8">
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-accent">35+</div>
-                  <div className="text-xs text-text-secondary">Dashboards</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-accent">300+</div>
-                  <div className="text-xs text-text-secondary">Tools</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-accent">6</div>
-                  <div className="text-xs text-text-secondary">Workspace Modes</div>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        </div>
-      </motion.div>
-    </main>
-  );
-}
+// Tool launcher buttons
+const QUICK_TOOLS = [
+  { id: 'storyboard', name: 'Storyboard', icon: '🎬' },
+  { id: 'comic-generator', name: 'Comic Gen', icon: '📚' },
+  { id: 'podcast-studio', name: 'Podcast', icon: '🎙️' },
+  { id: 'prompt-crafter', name: 'Prompts', icon: '🎯' },
+  { id: 'trading-dashboard', name: 'Trading', icon: '📈' },
+];
 
 function MainApp() {
-  const { currentPage, addMessage } = useWorkspaceStore();
+  const [currentView, setCurrentView] = useState<'dashboard' | 'settings'>('dashboard');
+  const [activeTool, setActiveTool] = useState<string | null>(null);
 
-  useEffect(() => {
-    // Check backend health on mount
-    const checkBackend = async () => {
-      try {
-        const health = await checkHealth();
-        addMessage({
-          id: `health-${Date.now()}`,
-          timestamp: new Date().toISOString(),
-          source: 'SYSTEM',
-          message: `Backend connected: ${health.backend} v${health.version}`,
-          level: 'success',
-        });
-      } catch (error) {
-        addMessage({
-          id: `health-error-${Date.now()}`,
-          timestamp: new Date().toISOString(),
-          source: 'SYSTEM',
-          message: 'Failed to connect to backend',
-          level: 'error',
-        });
-      }
-    };
-
-    checkBackend();
-  }, [addMessage]);
-
-  // Render page based on current route
-  const renderPage = () => {
-    switch (currentPage) {
-      case 'dashboard':
-        return <Dashboard />;
-      case 'workflows':
-        return <Workflows />;
-      case 'models':
-        return <Models />;
-      case 'settings':
-        return <Settings />;
-      case 'home':
-      default:
-        return <HomePage />;
-    }
+  const openTool = (toolId: string) => {
+    setActiveTool(toolId);
   };
 
   return (
-    <div className="flex flex-col h-screen bg-bg-primary">
-      {/* Header */}
-      <Header />
+    <div className="min-h-screen bg-[#050507] text-gray-200 selection:bg-[#00d4ff]/30 font-sans">
+      {/* HEADER */}
+      <header className="h-16 border-b border-[#00d4ff]/10 bg-[#0a0a0f]/80 backdrop-blur-md sticky top-0 z-40 px-6 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-[#00d4ff] rounded flex items-center justify-center shadow-[0_0_15px_#00d4ff]">
+              <Command className="text-black" size={18} />
+            </div>
+            <h1 className="text-xl font-bold tracking-widest font-mono text-white">
+              JARVIS <span className="text-[#00d4ff] text-xs align-top">PRO</span>
+            </h1>
+          </div>
 
-      {/* Page Content */}
-      <div className="flex-1 overflow-y-auto">
-        {renderPage()}
-      </div>
+          {/* Navigation Tabs */}
+          <nav className="ml-10 flex gap-1 bg-[#1a1a23] p-1 rounded-lg border border-white/5">
+            <button
+              onClick={() => setCurrentView('dashboard')}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                currentView === 'dashboard'
+                  ? 'bg-[#00d4ff] text-black shadow-lg'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              <Home size={14} /> Mission Control
+            </button>
+            <button
+              onClick={() => setCurrentView('settings')}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                currentView === 'settings'
+                  ? 'bg-[#00d4ff] text-black shadow-lg'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              <SettingsIcon size={14} /> System Config
+            </button>
+          </nav>
+        </div>
 
-      {/* Status Bar */}
-      <StatusBar />
+        <div className="flex items-center gap-4">
+          <ModelSelector />
+        </div>
+      </header>
 
-      {/* Universal Tool Panel (Modal) */}
-      <UniversalToolPanel />
+      {/* MAIN CONTENT AREA */}
+      <main className="p-8 max-w-[1600px] mx-auto animate-in fade-in duration-500">
+        {currentView === 'dashboard' ? (
+          <>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                <span className="w-1 h-8 bg-[#00d4ff] rounded-full inline-block shadow-[0_0_10px_#00d4ff]" />
+                Mission Control Overview
+              </h2>
 
-      {/* Specialized Tool Panels */}
-      <StoryboardingTool />
-      <ComicGeneratorTool />
-      <PodcastStudioTool />
-      <PromptCrafterTool />
-      <TradingDashboardTool />
+              {/* Quick Tool Launcher */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-500 mr-2">Quick Launch:</span>
+                {QUICK_TOOLS.map((tool) => (
+                  <button
+                    key={tool.id}
+                    onClick={() => openTool(tool.id)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1a1a23] hover:bg-[#00d4ff]/20 border border-white/5 hover:border-[#00d4ff]/30 rounded-lg text-xs transition-all"
+                    title={tool.name}
+                  >
+                    <span>{tool.icon}</span>
+                    <span className="hidden lg:inline text-gray-400">{tool.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+              {/* Left Column */}
+              <div className="space-y-6">
+                <SystemMetricsCard />
+                <CostTrackerWidget />
+              </div>
+
+              {/* Right Column */}
+              <div className="space-y-6">
+                <ActiveWorkflowsWidget />
+
+                {/* Creative Tools Quick Access */}
+                <div className="rounded-xl border border-white/5 bg-[#0a0a0f] p-6">
+                  <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-4">
+                    <Sparkles className="text-[#00d4ff]" size={20} />
+                    Creative Tools
+                  </h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    {QUICK_TOOLS.map((tool) => (
+                      <button
+                        key={tool.id}
+                        onClick={() => openTool(tool.id)}
+                        className="flex items-center gap-3 p-4 bg-[#1a1a23] hover:bg-[#00d4ff]/10 border border-white/5 hover:border-[#00d4ff]/30 rounded-lg transition-all text-left"
+                      >
+                        <span className="text-2xl">{tool.icon}</span>
+                        <div>
+                          <div className="text-sm font-medium text-white">{tool.name}</div>
+                          <div className="text-xs text-gray-500">Click to launch</div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </>
+        ) : (
+          /* SETTINGS VIEW */
+          <APIKeysTab />
+        )}
+      </main>
+
+      {/* Specialized Tool Panels (Modals) */}
+      <StoryboardingTool
+        isOpen={activeTool === 'storyboard'}
+        onClose={() => setActiveTool(null)}
+      />
+      <ComicGeneratorTool
+        isOpen={activeTool === 'comic-generator'}
+        onClose={() => setActiveTool(null)}
+      />
+      <PodcastStudioTool
+        isOpen={activeTool === 'podcast-studio'}
+        onClose={() => setActiveTool(null)}
+      />
+      <PromptCrafterTool
+        isOpen={activeTool === 'prompt-crafter'}
+        onClose={() => setActiveTool(null)}
+      />
+      <TradingDashboardTool
+        isOpen={activeTool === 'trading-dashboard'}
+        onClose={() => setActiveTool(null)}
+      />
     </div>
   );
 }

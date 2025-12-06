@@ -57,8 +57,17 @@ const AI_INSIGHTS: AIInsight[] = [
   { id: '5', symbol: 'TSLA', type: 'neutral', insight: 'FSD progress impressive but EV competition intensifying. Valuation stretched but momentum traders active.', confidence: 60 },
 ];
 
-export function TradingDashboardTool() {
+interface TradingDashboardToolProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+}
+
+export function TradingDashboardTool({ isOpen: propIsOpen, onClose: propOnClose }: TradingDashboardToolProps = {}) {
   const { selectTool, isToolPanelOpen, selectedTool } = useWorkspaceStore();
+
+  // Support both prop-based and store-based control
+  const isOpen = propIsOpen !== undefined ? propIsOpen : (isToolPanelOpen && selectedTool?.id === 'trading-dashboard');
+  const handleClose = propOnClose || (() => selectTool(null));
 
   const [activeTab, setActiveTab] = useState<'portfolio' | 'watchlist' | 'trade' | 'insights'>('portfolio');
   const [portfolio, setPortfolio] = useState<Asset[]>(INITIAL_PORTFOLIO);
@@ -67,8 +76,6 @@ export function TradingDashboardTool() {
   const [tradeType, setTradeType] = useState<'buy' | 'sell'>('buy');
   const [tradeQuantity, setTradeQuantity] = useState('');
   const [showTradeConfirm, setShowTradeConfirm] = useState(false);
-
-  const isOpen = isToolPanelOpen && selectedTool?.id === 'trading-dashboard';
 
   // Simulate real-time price updates
   useEffect(() => {
@@ -95,10 +102,6 @@ export function TradingDashboardTool() {
   }, [isOpen]);
 
   if (!isOpen) return null;
-
-  const handleClose = () => {
-    selectTool(null);
-  };
 
   // Calculate portfolio stats
   const totalValue = portfolio.reduce((sum, asset) => sum + asset.price * asset.holdings, 0);
