@@ -24,13 +24,13 @@ from pydantic import BaseModel, Field, validator
 # Initialize Flask app
 app = Flask(__name__)
 
-# CORS Configuration - restrict to production domains
+# CORS Configuration - allow localhost for development + production domains
 ALLOWED_ORIGINS = os.environ.get(
     'ALLOWED_ORIGINS',
-    'https://cockpit.nikoskatsaounis.com,https://ai-command.nikoskatsaounis.com,https://v0-cockpit-source-kzi3n3jsx-nikos-projects-9639ae0e.vercel.app,https://ai-command-center-6a1nwu7pw-nikos-projects-9639ae0e.vercel.app'
+    'http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173,http://127.0.0.1:3000,https://cockpit.nikoskatsaounis.com,https://ai-command.nikoskatsaounis.com,https://v0-cockpit-source-kzi3n3jsx-nikos-projects-9639ae0e.vercel.app,https://ai-command-center-6a1nwu7pw-nikos-projects-9639ae0e.vercel.app'
 ).split(',')
 
-CORS(app, resources={r"/*": {"origins": ALLOWED_ORIGINS}})
+CORS(app, resources={r"/*": {"origins": ALLOWED_ORIGINS, "supports_credentials": True}})
 sock = Sock(app)
 
 # ============================================================================
@@ -416,6 +416,80 @@ def switch_model():
         "status": "success",
         "model": model_id,
         "message": f"Switched to {model_id}"
+    })
+
+
+@app.route('/api/models/registry', methods=['GET'])
+def get_model_registry():
+    """Alias for /api/models/list - returns model registry"""
+    models = get_ai_models()
+    return jsonify({
+        "models": models,
+        "count": len(models)
+    })
+
+
+@app.route('/api/models/validate-keys', methods=['GET'])
+def validate_api_keys():
+    """Check which API keys are configured"""
+    # Check environment variables for configured keys
+    providers = {
+        'openai': 'OPENAI_API_KEY',
+        'anthropic': 'ANTHROPIC_API_KEY',
+        'google': 'GOOGLE_API_KEY',
+        'groq': 'GROQ_API_KEY',
+        'xai': 'XAI_API_KEY',
+        'openrouter': 'OPENROUTER_API_KEY',
+        'together': 'TOGETHER_API_KEY',
+        'mistral': 'MISTRAL_API_KEY',
+        'perplexity': 'PERPLEXITY_API_KEY',
+        'cohere': 'COHERE_API_KEY',
+        'elevenlabs': 'ELEVENLABS_API_KEY',
+        'replicate': 'REPLICATE_API_TOKEN',
+        'stability': 'STABILITY_API_KEY',
+        'midjourney': 'MIDJOURNEY_API_KEY',
+    }
+
+    validation = {}
+    configured_count = 0
+    missing_providers = []
+
+    for provider, env_var in providers.items():
+        is_configured = bool(os.environ.get(env_var))
+        validation[provider] = is_configured
+        if is_configured:
+            configured_count += 1
+        else:
+            missing_providers.append(provider)
+
+    return jsonify({
+        "validation": validation,
+        "total_providers": len(providers),
+        "configured_count": configured_count,
+        "missing_count": len(missing_providers),
+        "missing_providers": missing_providers,
+        "overall_status": "complete" if configured_count == len(providers) else "incomplete"
+    })
+
+
+@app.route('/api/job/<job_id>/status', methods=['GET'])
+def get_job_status(job_id):
+    """Get status of async job (comic generation, etc.)"""
+    # For now, return mock completed status
+    # In production, this would check a job queue
+    return jsonify({
+        "job_id": job_id,
+        "status": "completed",
+        "progress": 100,
+        "result": {
+            "panels": [
+                "https://placeholder.co/400x400?text=Panel+1",
+                "https://placeholder.co/400x400?text=Panel+2",
+                "https://placeholder.co/400x400?text=Panel+3",
+                "https://placeholder.co/400x400?text=Panel+4"
+            ],
+            "title": "Generated Comic"
+        }
     })
 
 
