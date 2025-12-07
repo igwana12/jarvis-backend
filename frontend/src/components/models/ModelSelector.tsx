@@ -1,19 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { ChevronDown, Check, Sparkles, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-
-interface AIModel {
-  id: string;
-  name: string;
-  provider: string;
-  icon: string;
-  context_window?: number;
-  contextWindow?: string;
-  category: string;
-  api_key_configured?: boolean;
-}
-
-const API_URL = import.meta.env.VITE_API_URL || 'https://web-production-16fdb.up.railway.app';
+import { useWorkspaceStore, AIModel } from '../../stores/workspaceStore';
 
 const CATEGORY_TABS = [
   { id: 'all', label: 'All', icon: '🌐' },
@@ -24,47 +12,24 @@ const CATEGORY_TABS = [
 ];
 
 export default function ModelSelector() {
-  const [models, setModels] = useState<AIModel[]>([]);
-  const [selectedModel, setSelectedModel] = useState<AIModel | null>(null);
+  const {
+    availableModels,
+    globalModel,
+    validationStatus,
+    isLoading,
+    fetchRegistry,
+    fetchValidation,
+    setGlobalModel,
+  } = useWorkspaceStore();
+
   const [isOpen, setIsOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState('all');
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const fetchModels = async () => {
-      try {
-        // ✅ CORRECT ENDPOINT per handoff doc
-        const response = await fetch(`${API_URL}/api/models/registry`);
-        if (!response.ok) throw new Error('Failed to fetch models');
-        const data = await response.json();
-
-        // Handle both array and object response formats
-        const modelList = Array.isArray(data) ? data : (data.models || []);
-        setModels(modelList);
-
-        if (modelList.length > 0) {
-          // Prefer configured models
-          const configuredModel = modelList.find((m: AIModel) => m.api_key_configured);
-          setSelectedModel(configuredModel || modelList[0]);
-        }
-      } catch (err) {
-        console.error('Failed to fetch models:', err);
-        // Fallback models
-        const fallback = [
-          { id: 'claude-sonnet-4', name: 'Claude Sonnet 4', provider: 'anthropic', icon: '🎭', context_window: 200000, category: 'text', api_key_configured: true },
-          { id: 'gpt-4-turbo', name: 'GPT-4 Turbo', provider: 'openai', icon: '🤖', context_window: 128000, category: 'text', api_key_configured: false },
-          { id: 'gemini-pro', name: 'Gemini Pro', provider: 'google', icon: '💎', context_window: 1000000, category: 'text', api_key_configured: true },
-        ];
-        setModels(fallback);
-        setSelectedModel(fallback[0]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchModels();
-  }, []);
+    fetchRegistry();
+    fetchValidation();
+  }, [fetchRegistry, fetchValidation]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -77,39 +42,35 @@ export default function ModelSelector() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleSelectModel = async (model: AIModel) => {
-    setSelectedModel(model);
+  const handleSelectModel = (model: AIModel) => {
+    setGlobalModel(model.id);
     setIsOpen(false);
-
-    try {
-      await fetch(`${API_URL}/api/models/switch`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: model.id }),
-      });
-    } catch (err) {
-      console.error('Failed to switch model:', err);
-    }
   };
 
   // Filter models by category
-  const filteredModels = activeCategory === 'all'
-    ? models
-    : models.filter(m => m.category === activeCategory);
+  const filteredModels =
+    activeCategory === 'all'
+      ? availableModels
+      : availableModels.filter((m) => m.category === activeCategory);
+
+  // Get selected model object
+  const selectedModel = availableModels.find((m) => m.id === globalModel);
 
   // Format context window for display
-  const formatContextWindow = (context: number | string | undefined): string => {
+  const formatContextWindow = (context: number | undefined): string => {
     if (!context) return 'N/A';
-    if (typeof context === 'string') return context;
     if (context >= 1000000) return `${(context / 1000000).toFixed(0)}M`;
     if (context >= 1000) return `${(context / 1000).toFixed(0)}k`;
     return String(context);
   };
 
-  if (loading) {
-    return (
-      <div className="h-9 w-40 bg-white/5 rounded-lg animate-pulse"></div>
-    );
+  // Count ready models (those with configured API keys)
+  const readyCount = availableModels.filter(
+    (m) => m.api_key_configured || validationStatus[m.provider?.toLowerCase()]
+  ).length;
+
+  if (isLoading && availableModels.length === 0) {
+    return <div className="h-9 w-40 bg-white/5 rounded-lg animate-pulse"></div>;
   }
 
   return (
@@ -120,7 +81,7 @@ export default function ModelSelector() {
       >
         <Sparkles className="text-[#00d4ff]" size={14} />
         <span className="text-sm font-medium text-white">
-          {selectedModel?.icon} {selectedModel?.name}
+          {selectedModel?.icon} {selectedModel?.name || 'Select Model'}
         </span>
         <ChevronDown
           className={`text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
@@ -160,37 +121,42 @@ export default function ModelSelector() {
                 {filteredModels.length} Models
               </span>
               <span className="text-xs text-green-400 flex items-center gap-1">
-                <Zap size={10} /> {models.filter(m => m.api_key_configured).length} Ready
+                <Zap size={10} /> {readyCount} Ready
               </span>
             </div>
 
             <div className="max-h-80 overflow-y-auto py-2">
-              {filteredModels.map((model) => (
-                <motion.button
-                  key={model.id}
-                  onClick={() => handleSelectModel(model)}
-                  whileHover={{ backgroundColor: 'rgba(255,255,255,0.05)' }}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 transition-colors ${
-                    selectedModel?.id === model.id ? 'bg-[#00d4ff]/10' : ''
-                  }`}
-                >
-                  <span className="text-xl">{model.icon}</span>
-                  <div className="flex-1 text-left">
-                    <div className="text-sm font-medium text-white flex items-center gap-2">
-                      {model.name}
-                      {model.api_key_configured && (
-                        <span className="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_6px_#22c55e]" title="API Key Configured" />
-                      )}
+              {filteredModels.map((model) => {
+                const isConfigured =
+                  model.api_key_configured || validationStatus[model.provider?.toLowerCase()];
+                return (
+                  <motion.button
+                    key={model.id}
+                    onClick={() => handleSelectModel(model)}
+                    whileHover={{ backgroundColor: 'rgba(255,255,255,0.05)' }}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 transition-colors ${
+                      globalModel === model.id ? 'bg-[#00d4ff]/10' : ''
+                    }`}
+                  >
+                    <span className="text-xl">{model.icon}</span>
+                    <div className="flex-1 text-left">
+                      <div className="text-sm font-medium text-white flex items-center gap-2">
+                        {model.name}
+                        {isConfigured && (
+                          <span
+                            className="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_6px_#22c55e]"
+                            title="API Key Configured"
+                          />
+                        )}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {model.provider} • {formatContextWindow(model.context_window)}
+                      </div>
                     </div>
-                    <div className="text-xs text-gray-500">
-                      {model.provider} • {formatContextWindow(model.context_window || model.contextWindow)}
-                    </div>
-                  </div>
-                  {selectedModel?.id === model.id && (
-                    <Check className="text-[#00d4ff]" size={16} />
-                  )}
-                </motion.button>
-              ))}
+                    {globalModel === model.id && <Check className="text-[#00d4ff]" size={16} />}
+                  </motion.button>
+                );
+              })}
 
               {filteredModels.length === 0 && (
                 <div className="px-4 py-6 text-center text-gray-500 text-sm">
