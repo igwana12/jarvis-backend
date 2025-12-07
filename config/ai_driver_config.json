@@ -1,0 +1,40 @@
+{
+  "drivers": {
+    "claude": {
+      "name": "Claude Sonnet",
+      "icon": "🎭",
+      "context_window": 200000,
+      "provider": "Anthropic"
+    },
+    "grok": {
+      "name": "Grok 2",
+      "icon": "🚀",
+      "context_window": 128000,
+      "provider": "xAI"
+    },
+    "gemini": {
+      "name": "Gemini Pro",
+      "icon": "♊",
+      "context_window": 1000000,
+      "provider": "Google"
+    },
+    "chatgpt": {
+      "name": "ChatGPT 4",
+      "icon": "🤖",
+      "context_window": 128000,
+      "provider": "OpenAI"
+    },
+    "mistral": {
+      "name": "Mistral Large 3",
+      "icon": "🇫🇷",
+      "context_window": 256000,
+      "provider": "Mistral"
+    },
+    "kimi-k2": {
+      "name": "Kimi K2 Thinking",
+      "icon": "🌙",
+      "context_window": 128000,
+      "provider": "Moonshot"
+    }
+  }
+}
