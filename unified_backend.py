@@ -273,6 +273,7 @@ def get_ai_models():
         {"id": "gemini", "name": "Gemini Pro", "provider": "Google", "icon": "♊", "contextWindow": "1M", "type": "text"},
         {"id": "chatgpt", "name": "ChatGPT 4", "provider": "OpenAI", "icon": "🤖", "contextWindow": "128k", "type": "text"},
         {"id": "mistral", "name": "Mistral Large 3", "provider": "Mistral", "icon": "🇫🇷", "contextWindow": "256k", "type": "text"},
+        {"id": "kimi-k2", "name": "Kimi K2 Thinking", "provider": "Moonshot", "icon": "🌙", "contextWindow": "128k", "type": "text"},
     ]
 
 
@@ -951,6 +952,8 @@ def get_api_keys_status():
         {"name": "Midjourney", "env": "MIDJOURNEY_API_KEY", "status": check_api_key("MIDJOURNEY_API_KEY")},
         {"name": "xAI", "env": "XAI_API_KEY", "status": check_api_key("XAI_API_KEY")},
         {"name": "Mistral", "env": "MISTRAL_API_KEY", "status": check_api_key("MISTRAL_API_KEY")},
+        {"name": "Moonshot", "env": "MOONSHOT_API_KEY", "status": check_api_key("MOONSHOT_API_KEY")},
+        {"name": "HuggingFace", "env": "HUGGINGFACE_API_KEY", "status": check_api_key("HUGGINGFACE_API_KEY")},
     ]
 
     return jsonify(api_keys)
