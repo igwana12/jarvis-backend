@@ -33,3 +33,18 @@ export const staggerContainer = {
     }
   }
 }
+
+export const listItem = {
+  initial: { opacity: 0, x: -20 },
+  animate: { opacity: 1, x: 0 },
+  exit: { opacity: 0, x: 20 },
+  transition: { duration: 0.2 }
+}
+
+export const glowPulse = {
+  initial: { boxShadow: '0 0 0 rgba(59, 130, 246, 0)' },
+  animate: {
+    boxShadow: ['0 0 0 rgba(59, 130, 246, 0)', '0 0 20px rgba(59, 130, 246, 0.5)', '0 0 0 rgba(59, 130, 246, 0)'],
+    transition: { duration: 2, repeat: Infinity }
+  }
+}
