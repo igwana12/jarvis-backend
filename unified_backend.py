@@ -273,6 +273,7 @@ def get_ai_models():
         {"id": "gemini", "name": "Gemini Pro", "provider": "Google", "icon": "♊", "contextWindow": "1M", "type": "text"},
         {"id": "chatgpt", "name": "ChatGPT 4", "provider": "OpenAI", "icon": "🤖", "contextWindow": "128k", "type": "text"},
         {"id": "mistral", "name": "Mistral Large 3", "provider": "Mistral", "icon": "🇫🇷", "contextWindow": "256k", "type": "text"},
+        {"id": "kimi-k2", "name": "Kimi K2 Thinking", "provider": "Moonshot", "icon": "🌙", "contextWindow": "128k", "type": "text"},
     ]
 
 
@@ -448,6 +449,7 @@ def validate_api_keys():
         'replicate': 'REPLICATE_API_TOKEN',
         'stability': 'STABILITY_API_KEY',
         'midjourney': 'MIDJOURNEY_API_KEY',
+        'moonshot': 'MOONSHOT_API_KEY',
     }
 
     validation = {}
