@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { ChevronDown, Check, Sparkles, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useWorkspaceStore, AIModel } from '../../stores/workspaceStore';
+import { useWorkspaceStore } from '../../stores/workspaceStore';
+import type { AIModel } from '../../types';
 
 const CATEGORY_TABS = [
   { id: 'all', label: 'All', icon: '🌐' },
@@ -56,17 +57,9 @@ export default function ModelSelector() {
   // Get selected model object
   const selectedModel = availableModels.find((m) => m.id === globalModel);
 
-  // Format context window for display
-  const formatContextWindow = (context: number | undefined): string => {
-    if (!context) return 'N/A';
-    if (context >= 1000000) return `${(context / 1000000).toFixed(0)}M`;
-    if (context >= 1000) return `${(context / 1000).toFixed(0)}k`;
-    return String(context);
-  };
-
   // Count ready models (those with configured API keys)
   const readyCount = availableModels.filter(
-    (m) => m.api_key_configured || validationStatus[m.provider?.toLowerCase()]
+    (m) => m.isAvailable || validationStatus[m.provider?.toLowerCase()]
   ).length;
 
   if (isLoading && availableModels.length === 0) {
@@ -128,7 +121,7 @@ export default function ModelSelector() {
             <div className="max-h-80 overflow-y-auto py-2">
               {filteredModels.map((model) => {
                 const isConfigured =
-                  model.api_key_configured || validationStatus[model.provider?.toLowerCase()];
+                  model.isAvailable || validationStatus[model.provider?.toLowerCase()];
                 return (
                   <motion.button
                     key={model.id}
@@ -150,7 +143,7 @@ export default function ModelSelector() {
                         )}
                       </div>
                       <div className="text-xs text-gray-500">
-                        {model.provider} • {formatContextWindow(model.context_window)}
+                        {model.provider} • {model.contextWindow || 'N/A'}
                       </div>
                     </div>
                     {globalModel === model.id && <Check className="text-[#00d4ff]" size={16} />}

@@ -52,4 +52,63 @@ export const SettingsAPI = {
     api.post('/api/settings/keys', { key_name: keyName, key_value: keyValue }),
 };
 
+// ============================================================================
+// Backward-compatible named exports for existing components
+// ============================================================================
+
+export const getSystemStatus = async () => {
+  const response = await SystemAPI.getStatus();
+  return response.data;
+};
+
+export const generateContent = async (prompt: string, persona?: string) => {
+  const response = await ContentAPI.generate(prompt, persona);
+  return response.data;
+};
+
+export const convertToPodcast = async (content: string) => {
+  const response = await MediaAPI.convertPodcast({ text: content, hosts: 'default' });
+  return response.data;
+};
+
+export const generateVideo = async (description: string, style?: string) => {
+  const response = await MediaAPI.generateVideo({ description, style });
+  return response.data;
+};
+
+export const createComic = async (description: string) => {
+  const response = await MediaAPI.createComic({ title: 'Untitled', style: 'manga', panels: [description] });
+  return response.data;
+};
+
+export const trackCost = async (category: string, amount: number) => {
+  const response = await api.post('/api/costs/track', { category, amount });
+  return response.data;
+};
+
+export const getCurrentCosts = async () => {
+  const response = await api.get('/api/costs/current');
+  return response.data;
+};
+
+export const getRecentVideos = async () => {
+  const response = await api.get('/api/videos/recent');
+  return response.data;
+};
+
+export const getDrafts = async () => {
+  const response = await api.get('/api/content/drafts');
+  return response.data;
+};
+
+export const getWorkflows = async () => {
+  const response = await api.get('/api/workflows/list');
+  return response.data;
+};
+
+export const executeWorkflow = async (workflowId: string) => {
+  const response = await api.post('/api/workflows/execute', { workflow_id: workflowId });
+  return response.data;
+};
+
 export default api;

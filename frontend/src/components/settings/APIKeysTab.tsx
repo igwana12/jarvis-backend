@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Key, Eye, EyeOff, Check, AlertCircle, ExternalLink, RefreshCw, Loader2 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Key, Eye, EyeOff, Check, AlertCircle, ExternalLink, RefreshCw } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://web-production-16fdb.up.railway.app';
 
