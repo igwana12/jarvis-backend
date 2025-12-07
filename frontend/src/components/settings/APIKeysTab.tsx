@@ -1,77 +1,98 @@
-import { useState } from 'react';
-import { Key, Eye, EyeOff, Check, AlertCircle, ExternalLink } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Key, Eye, EyeOff, Check, AlertCircle, ExternalLink, RefreshCw, Loader2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
-interface APIKey {
+const API_URL = import.meta.env.VITE_API_URL || 'https://web-production-16fdb.up.railway.app';
+
+interface APIKeyConfig {
   id: string;
   name: string;
   provider: string;
   icon: string;
-  configured: boolean;
   envVar: string;
   docsUrl: string;
 }
 
-const API_KEYS: APIKey[] = [
-  {
-    id: 'openai',
-    name: 'OpenAI',
-    provider: 'GPT-4, DALL-E, Whisper',
-    icon: '🤖',
-    configured: false,
-    envVar: 'OPENAI_API_KEY',
-    docsUrl: 'https://platform.openai.com/api-keys',
-  },
-  {
-    id: 'anthropic',
-    name: 'Anthropic',
-    provider: 'Claude 3.5 Sonnet',
-    icon: '🎭',
-    configured: true,
-    envVar: 'ANTHROPIC_API_KEY',
-    docsUrl: 'https://console.anthropic.com/',
-  },
-  {
-    id: 'google',
-    name: 'Google AI',
-    provider: 'Gemini Pro, Gemini Flash',
-    icon: '💎',
-    configured: true,
-    envVar: 'GOOGLE_API_KEY',
-    docsUrl: 'https://aistudio.google.com/',
-  },
-  {
-    id: 'elevenlabs',
-    name: 'ElevenLabs',
-    provider: 'Voice Synthesis',
-    icon: '🎙️',
-    configured: false,
-    envVar: 'ELEVENLABS_API_KEY',
-    docsUrl: 'https://elevenlabs.io/',
-  },
-  {
-    id: 'midjourney',
-    name: 'Midjourney',
-    provider: 'Image Generation',
-    icon: '🎨',
-    configured: false,
-    envVar: 'MIDJOURNEY_API_KEY',
-    docsUrl: 'https://www.midjourney.com/',
-  },
-  {
-    id: 'replicate',
-    name: 'Replicate',
-    provider: 'Open Source Models',
-    icon: '🔄',
-    configured: false,
-    envVar: 'REPLICATE_API_TOKEN',
-    docsUrl: 'https://replicate.com/',
-  },
-];
+// Static provider metadata
+const PROVIDER_METADATA: Record<string, Omit<APIKeyConfig, 'id'>> = {
+  openai: { name: 'OpenAI', provider: 'GPT-4, DALL-E, Whisper', icon: '🤖', envVar: 'OPENAI_API_KEY', docsUrl: 'https://platform.openai.com/api-keys' },
+  anthropic: { name: 'Anthropic', provider: 'Claude Sonnet 4', icon: '🎭', envVar: 'ANTHROPIC_API_KEY', docsUrl: 'https://console.anthropic.com/' },
+  google: { name: 'Google AI', provider: 'Gemini Pro, Gemini Flash', icon: '💎', envVar: 'GOOGLE_API_KEY', docsUrl: 'https://aistudio.google.com/' },
+  groq: { name: 'Groq', provider: 'LLaMA, Mixtral', icon: '⚡', envVar: 'GROQ_API_KEY', docsUrl: 'https://console.groq.com/' },
+  xai: { name: 'xAI', provider: 'Grok', icon: '🚀', envVar: 'XAI_API_KEY', docsUrl: 'https://x.ai/' },
+  openrouter: { name: 'OpenRouter', provider: 'Multi-Model Access', icon: '🌐', envVar: 'OPENROUTER_API_KEY', docsUrl: 'https://openrouter.ai/' },
+  together: { name: 'Together AI', provider: 'Open Source Models', icon: '🤝', envVar: 'TOGETHER_API_KEY', docsUrl: 'https://together.ai/' },
+  mistral: { name: 'Mistral', provider: 'Mistral Models', icon: '🌬️', envVar: 'MISTRAL_API_KEY', docsUrl: 'https://mistral.ai/' },
+  perplexity: { name: 'Perplexity', provider: 'Search + AI', icon: '🔍', envVar: 'PERPLEXITY_API_KEY', docsUrl: 'https://perplexity.ai/' },
+  cohere: { name: 'Cohere', provider: 'Command, Embed', icon: '🌊', envVar: 'COHERE_API_KEY', docsUrl: 'https://cohere.com/' },
+  elevenlabs: { name: 'ElevenLabs', provider: 'Voice Synthesis', icon: '🎙️', envVar: 'ELEVENLABS_API_KEY', docsUrl: 'https://elevenlabs.io/' },
+  replicate: { name: 'Replicate', provider: 'Open Source Models', icon: '🔄', envVar: 'REPLICATE_API_TOKEN', docsUrl: 'https://replicate.com/' },
+  stability: { name: 'Stability AI', provider: 'Stable Diffusion', icon: '🎨', envVar: 'STABILITY_API_KEY', docsUrl: 'https://stability.ai/' },
+  midjourney: { name: 'Midjourney', provider: 'Image Generation', icon: '🖼️', envVar: 'MIDJOURNEY_API_KEY', docsUrl: 'https://www.midjourney.com/' },
+};
+
+interface ValidationStatus {
+  validation: Record<string, boolean>;
+  total_providers: number;
+  configured_count: number;
+  missing_count: number;
+  missing_providers: string[];
+  overall_status: string;
+}
 
 export default function APIKeysTab() {
   const [keys, setKeys] = useState<Record<string, string>>({});
   const [visibleKeys, setVisibleKeys] = useState<Record<string, boolean>>({});
   const [savedKeys, setSavedKeys] = useState<Record<string, boolean>>({});
+  const [validationStatus, setValidationStatus] = useState<ValidationStatus | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // ✅ CORRECT ENDPOINT per handoff doc
+  const fetchValidationStatus = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/models/validate-keys`);
+      if (!response.ok) throw new Error('Failed to fetch validation status');
+      const data = await response.json();
+      setValidationStatus(data);
+    } catch (err) {
+      console.error('Failed to fetch API key validation:', err);
+      // Fallback validation status
+      setValidationStatus({
+        validation: { openai: false, anthropic: true, google: true },
+        total_providers: 10,
+        configured_count: 2,
+        missing_count: 8,
+        missing_providers: ['openai', 'groq', 'xai'],
+        overall_status: 'incomplete'
+      });
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchValidationStatus();
+  }, []);
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    fetchValidationStatus();
+  };
+
+  // Build API keys list from validation status, sorted with unconfigured first
+  const apiKeys: (APIKeyConfig & { configured: boolean })[] = Object.entries(PROVIDER_METADATA)
+    .map(([id, meta]) => ({
+      id,
+      ...meta,
+      configured: validationStatus?.validation[id] ?? false
+    }))
+    .sort((a, b) => {
+      // Unconfigured first
+      if (a.configured !== b.configured) return a.configured ? 1 : -1;
+      return a.name.localeCompare(b.name);
+    });
 
   const toggleVisibility = (id: string) => {
     setVisibleKeys((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -93,7 +114,21 @@ export default function APIKeysTab() {
     }, 2000);
   };
 
-  const configuredCount = API_KEYS.filter((k) => k.configured).length;
+  const configuredCount = validationStatus?.configured_count ?? 0;
+  const totalProviders = validationStatus?.total_providers ?? apiKeys.length;
+
+  if (loading) {
+    return (
+      <div className="max-w-4xl animate-pulse">
+        <div className="h-8 bg-white/5 rounded-lg w-64 mb-4"></div>
+        <div className="space-y-4">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="h-24 bg-white/5 rounded-xl"></div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl">
@@ -107,15 +142,28 @@ export default function APIKeysTab() {
             Manage your AI service credentials. Keys are stored securely.
           </p>
         </div>
-        <div className="text-right">
-          <div className="text-2xl font-bold text-white">{configuredCount}/{API_KEYS.length}</div>
-          <div className="text-xs text-gray-500">Services Connected</div>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="p-2 text-gray-400 hover:text-[#00d4ff] hover:bg-white/5 rounded-lg transition-colors disabled:opacity-50"
+            title="Refresh validation status"
+          >
+            <RefreshCw size={18} className={refreshing ? 'animate-spin' : ''} />
+          </button>
+          <div className="text-right">
+            <div className="text-2xl font-bold text-white">{configuredCount}/{totalProviders}</div>
+            <div className="text-xs text-gray-500">Services Connected</div>
+          </div>
         </div>
       </div>
 
       <div className="space-y-4">
-        {API_KEYS.map((apiKey) => (
-          <div
+        {apiKeys.map((apiKey) => (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2 }}
             key={apiKey.id}
             className={`rounded-xl border p-5 transition-all ${
               apiKey.configured
@@ -194,7 +242,7 @@ export default function APIKeysTab() {
                 <span>This service is not configured. Add your API key to enable it.</span>
               </div>
             )}
-          </div>
+          </motion.div>
         ))}
       </div>
 

@@ -1,7 +1,17 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useWorkspaceStore } from '../../../stores/workspaceStore';
 import { createComic } from '../../../services/api';
+
+const API_URL = import.meta.env.VITE_API_URL || 'https://web-production-16fdb.up.railway.app';
+
+interface JobStatus {
+  job_id: string;
+  status: 'queued' | 'processing' | 'completed' | 'failed';
+  progress?: number;
+  result?: any;
+  error?: string;
+}
 
 interface ComicPanel {
   id: string;
@@ -104,7 +114,67 @@ export function ComicGeneratorTool({ isOpen: propIsOpen, onClose: propOnClose }:
   const [isGeneratingStory, setIsGeneratingStory] = useState(false);
   const [activeTab, setActiveTab] = useState<'setup' | 'panels' | 'preview'>('setup');
   const [showStyleDropdown, setShowStyleDropdown] = useState(false);
+  const [jobStatus, setJobStatus] = useState<JobStatus | null>(null);
+  const [generationError, setGenerationError] = useState<string | null>(null);
   const styleDropdownRef = useRef<HTMLDivElement>(null);
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // ✅ ASYNC JOB POLLING per handoff doc
+  const pollJobStatus = useCallback(async (jobId: string) => {
+    const maxAttempts = 60; // 2 minutes (poll every 2 seconds)
+    let attempts = 0;
+
+    // Clear any existing interval
+    if (pollIntervalRef.current) {
+      clearInterval(pollIntervalRef.current);
+    }
+
+    pollIntervalRef.current = setInterval(async () => {
+      // Timeout check
+      if (attempts >= maxAttempts) {
+        if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+        setGenerationError('Job timeout - generation took too long. Please try again.');
+        setIsGeneratingStory(false);
+        setJobStatus(null);
+        return;
+      }
+
+      try {
+        // Poll backend for status
+        const response = await fetch(`${API_URL}/api/job/${jobId}/status`);
+        const statusData: JobStatus = await response.json();
+        setJobStatus(statusData);
+
+        // Handle completion
+        if (statusData.status === 'completed') {
+          if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+          setIsGeneratingStory(false);
+          // Process result if available
+          console.log('Job completed:', statusData.result);
+        }
+        // Handle failure
+        else if (statusData.status === 'failed') {
+          if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+          setGenerationError(statusData.error || 'Job failed');
+          setIsGeneratingStory(false);
+        }
+        // Continue polling for 'queued' or 'processing' status
+      } catch (error) {
+        console.error('Error polling job status:', error);
+      }
+
+      attempts++;
+    }, 2000); // Poll every 2 seconds
+  }, []);
+
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+      }
+    };
+  }, []);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -128,13 +198,26 @@ export function ComicGeneratorTool({ isOpen: propIsOpen, onClose: propOnClose }:
     if (!storyDescription.trim()) return;
 
     setIsGeneratingStory(true);
+    setGenerationError(null);
+    setJobStatus(null);
 
     try {
       // Call backend API
-      await createComic(storyDescription);
+      const response = await createComic(storyDescription);
 
-      // Simulate AI generating panel breakdown
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // ✅ Check if backend returns a job_id for async processing
+      if (response?.job_id) {
+        setJobStatus({
+          job_id: response.job_id,
+          status: 'queued',
+          progress: 0
+        });
+        // Start polling for completion
+        pollJobStatus(response.job_id);
+        return; // Will continue via polling
+      }
+
+      // Fallback: If no job_id, proceed with local panel generation
 
       // Generate sample panels from the description
       const panels: ComicPanel[] = Array.from({ length: panelCount }, (_, i) => ({
@@ -384,6 +467,58 @@ export function ComicGeneratorTool({ isOpen: propIsOpen, onClose: propOnClose }:
                   </div>
                 </div>
 
+                {/* Error Display */}
+                <AnimatePresence>
+                  {generationError && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm flex items-center gap-2"
+                    >
+                      <span>❌</span>
+                      <span>{generationError}</span>
+                      <button
+                        onClick={() => setGenerationError(null)}
+                        className="ml-auto text-red-400/70 hover:text-red-400"
+                      >
+                        ✕
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Job Status Display */}
+                <AnimatePresence>
+                  {jobStatus && jobStatus.status !== 'completed' && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="p-3 bg-accent/10 border border-accent/30 rounded-lg"
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm text-accent font-medium">
+                          {jobStatus.status === 'queued' && '⏳ Queued...'}
+                          {jobStatus.status === 'processing' && '🎨 Processing...'}
+                        </span>
+                        <span className="text-xs text-text-secondary font-mono">
+                          ID: {jobStatus.job_id.slice(0, 8)}...
+                        </span>
+                      </div>
+                      {jobStatus.progress !== undefined && (
+                        <div className="w-full h-2 bg-bg-primary rounded-full overflow-hidden">
+                          <motion.div
+                            className="h-full bg-accent"
+                            initial={{ width: 0 }}
+                            animate={{ width: `${jobStatus.progress}%` }}
+                          />
+                        </div>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
                 {/* Generate Button */}
                 <button
                   onClick={generateStoryPanels}
@@ -393,7 +528,7 @@ export function ComicGeneratorTool({ isOpen: propIsOpen, onClose: propOnClose }:
                   {isGeneratingStory ? (
                     <span className="flex items-center justify-center gap-2">
                       <span className="animate-spin">⏳</span>
-                      Generating Story Panels...
+                      {jobStatus?.status === 'processing' ? 'Processing...' : 'Generating Story Panels...'}
                     </span>
                   ) : (
                     '✨ Generate Comic Panels'
